@@ -160,6 +160,40 @@ class ServicioServicio:
 
         return ReprogramacionServicioLeer.model_validate(reprogramacion, from_attributes=True)
 
+    async def iniciar(self, servicio_id: UUID, tecnico: Tecnico) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        self._validar_tecnico_asignado(servicio, tecnico)
+        if servicio.estado != "ACEPTADO":
+            raise ValueError("Solo se pueden iniciar servicios en estado ACEPTADO")
+
+        servicio.estado = "EN_PROCESO"
+        servicio.fecha_inicio = datetime.now(UTC)
+        await self.session.commit()
+
+        iniciado = await self.servicios.obtener_por_id(servicio_id)
+        if iniciado is None:
+            raise RuntimeError("No fue posible recuperar el servicio iniciado")
+        return self._serializar(iniciado)
+
+    async def finalizar(self, servicio_id: UUID, tecnico: Tecnico) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        self._validar_tecnico_asignado(servicio, tecnico)
+        if servicio.estado != "EN_PROCESO":
+            raise ValueError("Solo se pueden finalizar servicios en estado EN_PROCESO")
+
+        servicio.estado = "FINALIZADO"
+        servicio.fecha_finalizacion = datetime.now(UTC)
+        await self.session.commit()
+
+        finalizado = await self.servicios.obtener_por_id(servicio_id)
+        if finalizado is None:
+            raise RuntimeError("No fue posible recuperar el servicio finalizado")
+        return self._serializar(finalizado)
+
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:
         servicio = servicio_con_ubicacion.servicio
@@ -174,6 +208,15 @@ class ServicioServicio:
             fecha_programada=servicio.fecha_programada,
             estado=servicio.estado,
             clave_idempotencia=servicio.clave_idempotencia,
+            tecnico_aceptado_id=servicio.tecnico_aceptado_id,
+            fecha_aceptacion=servicio.fecha_aceptacion,
+            fecha_inicio=servicio.fecha_inicio,
+            fecha_finalizacion=servicio.fecha_finalizacion,
             fecha_creacion=servicio.fecha_creacion,
             fecha_actualizacion=servicio.fecha_actualizacion,
         )
+
+    @staticmethod
+    def _validar_tecnico_asignado(servicio: Servicio, tecnico: Tecnico) -> None:
+        if servicio.tecnico_aceptado_id != tecnico.id:
+            raise PermissionError("Solo el tecnico asignado puede ejecutar esta accion")

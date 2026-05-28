@@ -133,3 +133,45 @@ async def reprogramar_servicio(
             detail="Servicio no encontrado",
         )
     return reprogramacion
+
+
+@router.post("/{servicio_id}/iniciar", response_model=ServicioLeer)
+async def iniciar_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ServicioLeer:
+    try:
+        servicio = await ServicioServicio(session).iniciar(servicio_id, tecnico_actual)
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
+
+
+@router.post("/{servicio_id}/finalizar", response_model=ServicioLeer)
+async def finalizar_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ServicioLeer:
+    try:
+        servicio = await ServicioServicio(session).finalizar(servicio_id, tecnico_actual)
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio

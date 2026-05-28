@@ -168,6 +168,8 @@ def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
         fecha_actualizacion=FECHA,
         tecnico_aceptado_id=None,
         fecha_aceptacion=None,
+        fecha_inicio=None,
+        fecha_finalizacion=None,
     )
 
 
@@ -507,3 +509,136 @@ async def test_reprogramar_crea_propuesta_pendiente_y_cambia_estado(
     assert respuesta.tecnico_id == tecnico.id
     assert servicio.estado == "REPROGRAMACION_SOLICITADA"
     assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_iniciar_servicio_valida_asignado_y_guarda_fecha_inicio(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico_fake()
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    servicio.tecnico_aceptado_id = tecnico.id
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    respuesta = await ServicioServicio(SessionFake()).iniciar(SERVICIO_ID, tecnico)
+
+    assert respuesta is not None
+    assert respuesta.estado == "EN_PROCESO"
+    assert respuesta.fecha_inicio is not None
+    assert servicio.fecha_inicio is not None
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_iniciar_servicio_rechaza_tecnico_no_asignado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    servicio.tecnico_aceptado_id = UUID("77777777-7777-7777-7777-777777777777")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(PermissionError, match="tecnico asignado"):
+        await ServicioServicio(SimpleNamespace()).iniciar(SERVICIO_ID, crear_tecnico_fake())
+
+
+@pytest.mark.asyncio
+async def test_iniciar_servicio_valida_estado_aceptado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico_fake()
+    servicio = crear_servicio_fake(estado="DISPONIBLE")
+    servicio.tecnico_aceptado_id = tecnico.id
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="estado ACEPTADO"):
+        await ServicioServicio(SimpleNamespace()).iniciar(SERVICIO_ID, tecnico)
+
+
+@pytest.mark.asyncio
+async def test_finalizar_servicio_valida_asignado_y_guarda_fecha_finalizacion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico_fake()
+    servicio = crear_servicio_fake(estado="EN_PROCESO")
+    servicio.tecnico_aceptado_id = tecnico.id
+    servicio.fecha_inicio = FECHA
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    respuesta = await ServicioServicio(SessionFake()).finalizar(SERVICIO_ID, tecnico)
+
+    assert respuesta is not None
+    assert respuesta.estado == "FINALIZADO"
+    assert respuesta.fecha_finalizacion is not None
+    assert servicio.fecha_finalizacion is not None
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_finalizar_servicio_valida_estado_en_proceso(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico_fake()
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    servicio.tecnico_aceptado_id = tecnico.id
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="estado EN_PROCESO"):
+        await ServicioServicio(SimpleNamespace()).finalizar(SERVICIO_ID, tecnico)

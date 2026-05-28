@@ -25,6 +25,10 @@ class ServicioLeer(BaseModel):
     fecha_programada: datetime
     estado: str
     clave_idempotencia: str
+    tecnico_aceptado_id: UUID | None = None
+    fecha_aceptacion: datetime | None = None
+    fecha_inicio: datetime | None = None
+    fecha_finalizacion: datetime | None = None
     fecha_creacion: datetime
     fecha_actualizacion: datetime
 
