@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.dialects import postgresql
 
 os.environ["DEBUG"] = "false"
 os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
@@ -15,7 +16,8 @@ from app.api.deps import get_db, obtener_empresa_cliente_por_api_key
 from app.core.security import generar_api_key_hash
 from app.main import app
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
-from app.repositorios.servicio import ServicioConUbicacion
+from app.repositorios.rechazo_servicio import RechazoServicioRepositorio
+from app.repositorios.servicio import ServicioConUbicacion, ServicioRepositorio
 from app.repositorios.tecnico import TecnicoConUbicacion
 from app.servicios import servicio as servicio_modulo
 from app.servicios.servicio import ServicioServicio
@@ -164,7 +166,13 @@ def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
         clave_idempotencia="req-publicar",
         fecha_creacion=FECHA,
         fecha_actualizacion=FECHA,
+        tecnico_aceptado_id=None,
+        fecha_aceptacion=None,
     )
+
+
+def crear_tecnico_fake() -> SimpleNamespace:
+    return SimpleNamespace(id=UUID("44444444-4444-4444-4444-444444444444"))
 
 
 @pytest.mark.asyncio
@@ -282,3 +290,220 @@ def test_publicar_servicio_sin_admin_es_denegado() -> None:
     response = client.post(f"/api/v1/servicios/{SERVICIO_ID}/publicar")
 
     assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_aceptar_servicio_usa_bloqueo_y_cambia_estado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="DISPONIBLE")
+    tecnico = crear_tecnico_fake()
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    class NotificacionRepositorioFake:
+        estado_notificacion: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def actualizar_estado_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID, estado: str
+        ) -> int:
+            self.__class__.estado_notificacion = estado
+            return 1
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(
+        servicio_modulo, "NotificacionServicioRepositorio", NotificacionRepositorioFake
+    )
+
+    respuesta = await ServicioServicio(SessionFake()).aceptar(SERVICIO_ID, tecnico)
+
+    assert respuesta is not None
+    assert respuesta.estado == "ACEPTADO"
+    assert servicio.tecnico_aceptado_id == tecnico.id
+    assert servicio.fecha_aceptacion is not None
+    assert NotificacionRepositorioFake.estado_notificacion == "ACEPTADA"
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_aceptar_servicio_first_technician_wins(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    servicio.tecnico_aceptado_id = UUID("55555555-5555-5555-5555-555555555555")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="ya no esta disponible"):
+        await ServicioServicio(SimpleNamespace()).aceptar(SERVICIO_ID, crear_tecnico_fake())
+
+
+@pytest.mark.asyncio
+async def test_obtener_servicio_para_actualizar_usa_for_update() -> None:
+    class SessionFake:
+        statement = None
+
+        async def scalar(self, statement: object) -> None:
+            self.__class__.statement = statement
+            return None
+
+    await ServicioRepositorio(SessionFake()).obtener_por_id_para_actualizar(SERVICIO_ID)
+
+    sql = str(
+        SessionFake.statement.compile(
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": False}
+        )
+    )
+    assert "FOR UPDATE" in sql
+
+
+@pytest.mark.asyncio
+async def test_rechazar_servicio_es_unico_y_oculta_notificacion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="DISPONIBLE")
+    tecnico = crear_tecnico_fake()
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    class RechazoRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def crear_una_vez(
+            self, servicio_id: UUID, tecnico_id: UUID, motivo: str | None = None
+        ) -> bool:
+            return True
+
+    class NotificacionRepositorioFake:
+        estado_notificacion: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def actualizar_estado_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID, estado: str
+        ) -> int:
+            self.__class__.estado_notificacion = estado
+            return 1
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(servicio_modulo, "RechazoServicioRepositorio", RechazoRepositorioFake)
+    monkeypatch.setattr(
+        servicio_modulo, "NotificacionServicioRepositorio", NotificacionRepositorioFake
+    )
+
+    respuesta = await ServicioServicio(SessionFake()).rechazar(
+        SERVICIO_ID, tecnico, servicio_modulo.ServicioRechazar(motivo="No disponible")
+    )
+
+    assert respuesta is not None
+    assert respuesta.rechazo_creado is True
+    assert NotificacionRepositorioFake.estado_notificacion == "RECHAZADA"
+    assert SessionFake.commits == 1
+
+
+def test_rechazo_servicio_usa_on_conflict_para_evitar_duplicados() -> None:
+    class ResultadoFake:
+        rowcount = 0
+
+    class SessionFake:
+        statement = None
+
+        async def execute(self, statement: object) -> ResultadoFake:
+            self.__class__.statement = statement
+            return ResultadoFake()
+
+    async def ejecutar() -> None:
+        await RechazoServicioRepositorio(SessionFake()).crear_una_vez(
+            SERVICIO_ID, crear_tecnico_fake().id, "No disponible"
+        )
+
+    import asyncio
+
+    asyncio.run(ejecutar())
+
+    sql = str(SessionFake.statement)
+    assert "ON CONFLICT ON CONSTRAINT uq_rechazos_servicio_servicio_id_tecnico_id" in sql
+
+
+@pytest.mark.asyncio
+async def test_reprogramar_crea_propuesta_pendiente_y_cambia_estado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    tecnico = crear_tecnico_fake()
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    class ReprogramacionRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def crear(self, reprogramacion: object) -> object:
+            reprogramacion.id = UUID("66666666-6666-6666-6666-666666666666")
+            reprogramacion.fecha_creacion = FECHA
+            return reprogramacion
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(
+        servicio_modulo, "ReprogramacionServicioRepositorio", ReprogramacionRepositorioFake
+    )
+
+    respuesta = await ServicioServicio(SessionFake()).reprogramar(
+        SERVICIO_ID,
+        tecnico,
+        servicio_modulo.ServicioReprogramar(fecha_propuesta=FECHA, motivo="Trafico"),
+    )
+
+    assert respuesta is not None
+    assert respuesta.estado == "PENDIENTE"
+    assert respuesta.tecnico_id == tecnico.id
+    assert servicio.estado == "REPROGRAMACION_SOLICITADA"
+    assert SessionFake.commits == 1

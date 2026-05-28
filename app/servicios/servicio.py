@@ -1,14 +1,27 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.empresa_cliente import EmpresaCliente
+from app.modelos.reprogramacion_servicio import ReprogramacionServicio
 from app.modelos.servicio import Servicio
+from app.modelos.tecnico import Tecnico
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
+from app.repositorios.rechazo_servicio import RechazoServicioRepositorio
+from app.repositorios.reprogramacion_servicio import ReprogramacionServicioRepositorio
 from app.repositorios.servicio import ServicioConUbicacion, ServicioRepositorio
 from app.repositorios.tecnico import TecnicoRepositorio
-from app.schemas.servicio import ServicioCrear, ServicioLeer, ServicioPublicadoLeer
+from app.schemas.servicio import (
+    ReprogramacionServicioLeer,
+    ServicioCrear,
+    ServicioLeer,
+    ServicioPublicadoLeer,
+    ServicioRechazadoLeer,
+    ServicioRechazar,
+    ServicioReprogramar,
+)
 
 
 class ServicioServicio:
@@ -17,6 +30,8 @@ class ServicioServicio:
         self.servicios = ServicioRepositorio(session)
         self.tecnicos = TecnicoRepositorio(session)
         self.notificaciones = NotificacionServicioRepositorio(session)
+        self.rechazos = RechazoServicioRepositorio(session)
+        self.reprogramaciones = ReprogramacionServicioRepositorio(session)
 
     async def crear(
         self,
@@ -81,6 +96,69 @@ class ServicioServicio:
             notificaciones_creadas=notificaciones_creadas,
             tecnicos_cercanos=len(tecnicos_cercanos),
         )
+
+    async def aceptar(self, servicio_id: UUID, tecnico: Tecnico) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        if servicio.estado != "DISPONIBLE" or servicio.tecnico_aceptado_id is not None:
+            raise ValueError("El servicio ya no esta disponible")
+
+        servicio.estado = "ACEPTADO"
+        servicio.tecnico_aceptado_id = tecnico.id
+        servicio.fecha_aceptacion = datetime.now(UTC)
+        await self.notificaciones.actualizar_estado_para_tecnico(
+            servicio.id, tecnico.id, "ACEPTADA"
+        )
+        await self.session.commit()
+
+        aceptado = await self.servicios.obtener_por_id(servicio_id)
+        if aceptado is None:
+            raise RuntimeError("No fue posible recuperar el servicio aceptado")
+        return self._serializar(aceptado)
+
+    async def rechazar(
+        self, servicio_id: UUID, tecnico: Tecnico, rechazo_in: ServicioRechazar
+    ) -> ServicioRechazadoLeer | None:
+        servicio = await self.servicios.obtener_por_id(servicio_id)
+        if servicio is None:
+            return None
+
+        rechazo_creado = await self.rechazos.crear_una_vez(
+            servicio_id, tecnico.id, rechazo_in.motivo
+        )
+        await self.notificaciones.actualizar_estado_para_tecnico(
+            servicio_id, tecnico.id, "RECHAZADA"
+        )
+        await self.session.commit()
+        return ServicioRechazadoLeer(
+            servicio_id=servicio_id,
+            tecnico_id=tecnico.id,
+            rechazo_creado=rechazo_creado,
+            estado="RECHAZADO_POR_TECNICO",
+        )
+
+    async def reprogramar(
+        self, servicio_id: UUID, tecnico: Tecnico, reprogramacion_in: ServicioReprogramar
+    ) -> ReprogramacionServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        if servicio.estado not in {"DISPONIBLE", "ACEPTADO"}:
+            raise ValueError("El servicio no permite reprogramacion")
+
+        reprogramacion = ReprogramacionServicio(
+            servicio_id=servicio_id,
+            tecnico_id=tecnico.id,
+            fecha_propuesta=reprogramacion_in.fecha_propuesta,
+            motivo=reprogramacion_in.motivo,
+            estado="PENDIENTE",
+        )
+        await self.reprogramaciones.crear(reprogramacion)
+        servicio.estado = "REPROGRAMACION_SOLICITADA"
+        await self.session.commit()
+
+        return ReprogramacionServicioLeer.model_validate(reprogramacion, from_attributes=True)
 
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:

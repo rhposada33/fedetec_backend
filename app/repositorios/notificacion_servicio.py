@@ -1,5 +1,6 @@
 from uuid import UUID
 
+from sqlalchemy import update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -31,6 +32,18 @@ class NotificacionServicioRepositorio:
             .on_conflict_do_nothing(
                 constraint="uq_notificaciones_servicio_servicio_id_tecnico_id"
             )
+        )
+        result = await self.session.execute(stmt)
+        return result.rowcount or 0
+
+    async def actualizar_estado_para_tecnico(
+        self, servicio_id: UUID, tecnico_id: UUID, estado: str
+    ) -> int:
+        stmt = (
+            update(NotificacionServicio)
+            .where(NotificacionServicio.servicio_id == servicio_id)
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+            .values(estado=estado)
         )
         result = await self.session.execute(stmt)
         return result.rowcount or 0

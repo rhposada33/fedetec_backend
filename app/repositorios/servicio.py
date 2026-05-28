@@ -43,6 +43,10 @@ class ServicioRepositorio:
         row = (await self.session.execute(stmt)).one_or_none()
         return ServicioConUbicacion(*row) if row else None
 
+    async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> Servicio | None:
+        stmt = select(Servicio).where(Servicio.id == servicio_id).with_for_update()
+        return await self.session.scalar(stmt)
+
     async def obtener_por_idempotencia(
         self, empresa_cliente_id: UUID, clave_idempotencia: str
     ) -> ServicioConUbicacion | None:

@@ -3,8 +3,16 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query, status
 
-from app.api.deps import AdminDep, EmpresaClienteApiKeyDep, SesionDep
-from app.schemas.servicio import ServicioCrear, ServicioLeer, ServicioPublicadoLeer
+from app.api.deps import AdminDep, EmpresaClienteApiKeyDep, SesionDep, TecnicoActualDep
+from app.schemas.servicio import (
+    ReprogramacionServicioLeer,
+    ServicioCrear,
+    ServicioLeer,
+    ServicioPublicadoLeer,
+    ServicioRechazadoLeer,
+    ServicioRechazar,
+    ServicioReprogramar,
+)
 from app.servicios.servicio import ServicioServicio
 
 router = APIRouter()
@@ -68,3 +76,60 @@ async def publicar_servicio(
             detail="Servicio no encontrado",
         )
     return servicio
+
+
+@router.post("/{servicio_id}/aceptar", response_model=ServicioLeer)
+async def aceptar_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ServicioLeer:
+    try:
+        servicio = await ServicioServicio(session).aceptar(servicio_id, tecnico_actual)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
+
+
+@router.post("/{servicio_id}/rechazar", response_model=ServicioRechazadoLeer)
+async def rechazar_servicio(
+    servicio_id: UUID,
+    rechazo_in: ServicioRechazar,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ServicioRechazadoLeer:
+    rechazo = await ServicioServicio(session).rechazar(servicio_id, tecnico_actual, rechazo_in)
+    if rechazo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return rechazo
+
+
+@router.post("/{servicio_id}/reprogramar", response_model=ReprogramacionServicioLeer)
+async def reprogramar_servicio(
+    servicio_id: UUID,
+    reprogramacion_in: ServicioReprogramar,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ReprogramacionServicioLeer:
+    try:
+        reprogramacion = await ServicioServicio(session).reprogramar(
+            servicio_id, tecnico_actual, reprogramacion_in
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if reprogramacion is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return reprogramacion

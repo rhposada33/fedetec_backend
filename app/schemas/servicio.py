@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ServicioCrear(BaseModel):
@@ -32,3 +32,31 @@ class ServicioLeer(BaseModel):
 class ServicioPublicadoLeer(ServicioLeer):
     notificaciones_creadas: int
     tecnicos_cercanos: int
+
+
+class ServicioRechazar(BaseModel):
+    motivo: str | None = None
+
+
+class ServicioReprogramar(BaseModel):
+    fecha_propuesta: datetime
+    motivo: str | None = None
+
+
+class ReprogramacionServicioLeer(BaseModel):
+    id: UUID
+    servicio_id: UUID
+    tecnico_id: UUID
+    fecha_propuesta: datetime
+    motivo: str | None = None
+    estado: str
+    fecha_creacion: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ServicioRechazadoLeer(BaseModel):
+    servicio_id: UUID
+    tecnico_id: UUID
+    rechazo_creado: bool
+    estado: str
