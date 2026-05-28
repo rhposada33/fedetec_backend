@@ -1,0 +1,82 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: fedetec_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fedetec}
+      POSTGRES_USER: ${POSTGRES_USER:-fedetec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fedetec}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fedetec_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_NOMBRE: ${APP_NOMBRE:-Fedetec API}
+      APP_ENTORNO: ${APP_ENTORNO:-local}
+      DEBUG: ${APP_DEBUG:-true}
+      SECRET_KEY: ${SECRET_KEY:-cambia-este-secreto-en-desarrollo-local}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fedetec}:${POSTGRES_PASSWORD:-fedetec}@postgres:5432/${POSTGRES_DB:-fedetec}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      POSTGRES_DB: ${POSTGRES_DB:-fedetec}
+      POSTGRES_USER: ${POSTGRES_USER:-fedetec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fedetec}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command:
+      - sh
+      - -c
+      - |
+        python - <<'PY'
+        import os
+        import socket
+        import time
+
+        host = os.environ["POSTGRES_HOST"]
+        port = int(os.environ["POSTGRES_PORT"])
+        deadline = time.time() + 60
+
+        while True:
+            try:
+                with socket.create_connection((host, port), timeout=3):
+                    break
+            except OSError:
+                if time.time() > deadline:
+                    raise TimeoutError("PostgreSQL no estuvo listo dentro de 60 segundos")
+                time.sleep(1)
+        PY
+        fastapi dev app/main.py --host 0.0.0.0 --port 8000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  postgres_data:

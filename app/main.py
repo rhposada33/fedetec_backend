@@ -25,9 +25,12 @@ def crear_app() -> FastAPI:
     async def salud() -> dict[str, str]:
         return {"estado": "ok"}
 
+    @app.get("/health", tags=["salud"])
+    async def health() -> dict[str, str]:
+        return {"estado": "ok"}
+
     app.include_router(api_router, prefix=settings.API_V1_PREFIX)
     return app
 
 
 app = crear_app()
-

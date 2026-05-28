@@ -38,12 +38,59 @@ fastapi dev app/main.py
 
 La API expone:
 
+- `GET /health`
 - `GET /salud`
 - `POST /api/v1/autenticacion/registro`
 - `POST /api/v1/autenticacion/token`
 - `GET /api/v1/usuarios/me`
 - `POST /api/v1/sedes`
 - `GET /api/v1/sedes`
+
+## Docker local
+
+Crear variables de entorno locales:
+
+```bash
+cp .env.example .env
+```
+
+Docker Compose configura `DATABASE_URL` automáticamente apuntando al servicio interno `postgres`. Para ejecución sin Docker, usa el `DATABASE_URL` de `.env.example`, que apunta a `localhost`.
+
+Si quieres cambiar el modo debug de Docker, usa `APP_DEBUG=true` o `APP_DEBUG=false` en `.env`; Compose lo traduce a la variable `DEBUG` que lee la aplicación.
+
+Iniciar el proyecto:
+
+```bash
+docker compose up --build
+```
+
+Reconstruir contenedores:
+
+```bash
+docker compose build --no-cache
+docker compose up
+```
+
+Ejecutar migraciones:
+
+```bash
+docker compose run --rm api alembic upgrade head
+```
+
+Comprobar la API desde el host:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Comprobar PostGIS:
+
+```bash
+docker compose exec postgres psql -U fedetec -d fedetec -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+docker compose exec postgres psql -U fedetec -d fedetec -c "SELECT postgis_full_version();"
+```
+
+El servicio `api` monta el código fuente como volumen y ejecuta `fastapi dev`, por lo que los cambios en `app/` recargan automáticamente el servidor.
 
 ## Pruebas
 
@@ -68,4 +115,3 @@ app/
 alembic/
 tests/
 ```
-

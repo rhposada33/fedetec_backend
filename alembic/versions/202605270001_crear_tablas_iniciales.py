@@ -43,7 +43,11 @@ def upgrade() -> None:
         sa.Column(
             "ubicacion",
             geoalchemy2.types.Geometry(
-                geometry_type="POINT", srid=4326, from_text="ST_GeomFromEWKT", name="geometry"
+                geometry_type="POINT",
+                srid=4326,
+                spatial_index=False,
+                from_text="ST_GeomFromEWKT",
+                name="geometry",
             ),
             nullable=True,
         ),
@@ -64,4 +68,3 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_usuarios_id"), table_name="usuarios")
     op.drop_index(op.f("ix_usuarios_correo"), table_name="usuarios")
     op.drop_table("usuarios")
-
