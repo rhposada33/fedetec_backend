@@ -38,6 +38,11 @@ class ServicioRepositorio:
         row = (await self.session.execute(stmt)).one_or_none()
         return ServicioConUbicacion(*row) if row else None
 
+    async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion | None:
+        stmt = self._select_con_ubicacion().where(Servicio.id == servicio_id)
+        row = (await self.session.execute(stmt)).one_or_none()
+        return ServicioConUbicacion(*row) if row else None
+
     async def obtener_por_idempotencia(
         self, empresa_cliente_id: UUID, clave_idempotencia: str
     ) -> ServicioConUbicacion | None:
@@ -51,6 +56,11 @@ class ServicioRepositorio:
 
     async def crear(self, servicio: Servicio) -> Servicio:
         self.session.add(servicio)
+        await self.session.commit()
+        await self.session.refresh(servicio)
+        return servicio
+
+    async def guardar(self, servicio: Servicio) -> Servicio:
         await self.session.commit()
         await self.session.refresh(servicio)
         return servicio

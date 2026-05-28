@@ -1,10 +1,10 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Header, HTTPException, status
+from fastapi import APIRouter, Header, HTTPException, Query, status
 
-from app.api.deps import EmpresaClienteApiKeyDep, SesionDep
-from app.schemas.servicio import ServicioCrear, ServicioLeer
+from app.api.deps import AdminDep, EmpresaClienteApiKeyDep, SesionDep
+from app.schemas.servicio import ServicioCrear, ServicioLeer, ServicioPublicadoLeer
 from app.servicios.servicio import ServicioServicio
 
 router = APIRouter()
@@ -42,6 +42,26 @@ async def obtener_servicio(
     servicio_id: UUID, session: SesionDep, empresa_cliente: EmpresaClienteApiKeyDep
 ) -> ServicioLeer:
     servicio = await ServicioServicio(session).obtener(servicio_id, empresa_cliente)
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
+
+
+@router.post("/{servicio_id}/publicar", response_model=ServicioPublicadoLeer)
+async def publicar_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    _admin: AdminDep,
+    radio_metros: Annotated[int, Query(gt=0, le=100_000)] = 10_000,
+) -> ServicioPublicadoLeer:
+    try:
+        servicio = await ServicioServicio(session).publicar(servicio_id, radio_metros)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
     if servicio is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

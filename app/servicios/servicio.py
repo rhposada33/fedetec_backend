@@ -5,13 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.servicio import Servicio
+from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
 from app.repositorios.servicio import ServicioConUbicacion, ServicioRepositorio
-from app.schemas.servicio import ServicioCrear, ServicioLeer
+from app.repositorios.tecnico import TecnicoRepositorio
+from app.schemas.servicio import ServicioCrear, ServicioLeer, ServicioPublicadoLeer
 
 
 class ServicioServicio:
     def __init__(self, session: AsyncSession) -> None:
+        self.session = session
         self.servicios = ServicioRepositorio(session)
+        self.tecnicos = TecnicoRepositorio(session)
+        self.notificaciones = NotificacionServicioRepositorio(session)
 
     async def crear(
         self,
@@ -43,6 +48,39 @@ class ServicioServicio:
     ) -> ServicioLeer | None:
         servicio = await self.servicios.obtener_por_id_y_empresa(servicio_id, empresa_cliente.id)
         return self._serializar(servicio) if servicio is not None else None
+
+    async def publicar(
+        self, servicio_id: UUID, radio_metros: int = 10_000
+    ) -> ServicioPublicadoLeer | None:
+        servicio_con_ubicacion = await self.servicios.obtener_por_id(servicio_id)
+        if servicio_con_ubicacion is None:
+            return None
+
+        servicio = servicio_con_ubicacion.servicio
+        if servicio.estado != "CREADO":
+            raise ValueError("Solo se pueden publicar servicios en estado CREADO")
+
+        tecnicos_cercanos = await self.tecnicos.buscar_cercanos(
+            servicio_con_ubicacion.latitud,
+            servicio_con_ubicacion.longitud,
+            radio_metros,
+        )
+        notificaciones_creadas = await self.notificaciones.crear_para_tecnicos_una_vez(
+            servicio.id,
+            [tecnico.tecnico.id for tecnico in tecnicos_cercanos],
+        )
+
+        servicio.estado = "DISPONIBLE"
+        await self.servicios.guardar(servicio)
+        publicado = await self.servicios.obtener_por_id(servicio.id)
+        if publicado is None:
+            raise RuntimeError("No fue posible recuperar el servicio publicado")
+
+        return ServicioPublicadoLeer(
+            **self._serializar(publicado).model_dump(),
+            notificaciones_creadas=notificaciones_creadas,
+            tecnicos_cercanos=len(tecnicos_cercanos),
+        )
 
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:

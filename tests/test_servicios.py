@@ -14,7 +14,9 @@ from app.api import deps
 from app.api.deps import get_db, obtener_empresa_cliente_por_api_key
 from app.core.security import generar_api_key_hash
 from app.main import app
+from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
 from app.repositorios.servicio import ServicioConUbicacion
+from app.repositorios.tecnico import TecnicoConUbicacion
 from app.servicios import servicio as servicio_modulo
 from app.servicios.servicio import ServicioServicio
 
@@ -148,3 +150,135 @@ def test_post_servicio_requiere_idempotency_key() -> None:
     )
 
     assert response.status_code == 400
+
+
+def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
+    return SimpleNamespace(
+        id=SERVICIO_ID,
+        empresa_cliente_id=EMPRESA_ID,
+        tipo_servicio=1,
+        placa_vehiculo="ABC123",
+        direccion="Calle 1",
+        fecha_programada=FECHA,
+        estado=estado,
+        clave_idempotencia="req-publicar",
+        fecha_creacion=FECHA,
+        fecha_actualizacion=FECHA,
+    )
+
+
+@pytest.mark.asyncio
+async def test_publicar_servicio_selecciona_cercanos_notifica_y_cambia_estado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake()
+    tecnico_1 = SimpleNamespace(id=UUID("44444444-4444-4444-4444-444444444444"))
+    tecnico_2 = SimpleNamespace(id=UUID("55555555-5555-5555-5555-555555555555"))
+
+    class ServicioRepositorioFake:
+        estado_guardado: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion | None:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+        async def guardar(self, servicio_actualizado: SimpleNamespace) -> SimpleNamespace:
+            self.__class__.estado_guardado = servicio_actualizado.estado
+            servicio_actualizado.fecha_actualizacion = FECHA
+            return servicio_actualizado
+
+    class TecnicoRepositorioFake:
+        busqueda: tuple[float, float, int] | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def buscar_cercanos(
+            self, latitud: float, longitud: float, radio_metros: int
+        ) -> list[TecnicoConUbicacion]:
+            self.__class__.busqueda = (latitud, longitud, radio_metros)
+            return [
+                TecnicoConUbicacion(tecnico_1, 4.712, -74.073, 120.0),
+                TecnicoConUbicacion(tecnico_2, 4.713, -74.074, 180.0),
+            ]
+
+    class NotificacionRepositorioFake:
+        tecnico_ids_notificados: list[UUID] = []
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def crear_para_tecnicos_una_vez(
+            self, servicio_id: UUID, tecnico_ids: list[UUID]
+        ) -> int:
+            self.__class__.tecnico_ids_notificados = tecnico_ids
+            return len(tecnico_ids)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(servicio_modulo, "TecnicoRepositorio", TecnicoRepositorioFake)
+    monkeypatch.setattr(
+        servicio_modulo, "NotificacionServicioRepositorio", NotificacionRepositorioFake
+    )
+
+    respuesta = await ServicioServicio(object()).publicar(SERVICIO_ID, radio_metros=5000)
+
+    assert respuesta is not None
+    assert TecnicoRepositorioFake.busqueda == (4.711, -74.0721, 5000)
+    assert NotificacionRepositorioFake.tecnico_ids_notificados == [tecnico_1.id, tecnico_2.id]
+    assert ServicioRepositorioFake.estado_guardado == "DISPONIBLE"
+    assert respuesta.estado == "DISPONIBLE"
+    assert respuesta.notificaciones_creadas == 2
+    assert respuesta.tecnicos_cercanos == 2
+
+
+@pytest.mark.asyncio
+async def test_publicar_servicio_rechaza_estado_distinto_a_creado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="DISPONIBLE")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion | None:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="estado CREADO"):
+        await ServicioServicio(object()).publicar(SERVICIO_ID)
+
+
+def test_notificaciones_servicio_usa_on_conflict_para_evitar_duplicados() -> None:
+    class ResultadoFake:
+        rowcount = 0
+
+    class SessionFake:
+        statement = None
+
+        async def execute(self, statement: object) -> ResultadoFake:
+            self.__class__.statement = statement
+            return ResultadoFake()
+
+    tecnico_id = UUID("44444444-4444-4444-4444-444444444444")
+
+    async def ejecutar() -> None:
+        await NotificacionServicioRepositorio(SessionFake()).crear_para_tecnicos_una_vez(
+            SERVICIO_ID, [tecnico_id]
+        )
+
+    import asyncio
+
+    asyncio.run(ejecutar())
+
+    sql = str(SessionFake.statement)
+    assert "ON CONFLICT ON CONSTRAINT uq_notificaciones_servicio_servicio_id_tecnico_id" in sql
+
+
+def test_publicar_servicio_sin_admin_es_denegado() -> None:
+    response = client.post(f"/api/v1/servicios/{SERVICIO_ID}/publicar")
+
+    assert response.status_code == 401

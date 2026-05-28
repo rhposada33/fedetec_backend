@@ -27,3 +27,8 @@ class ServicioLeer(BaseModel):
     clave_idempotencia: str
     fecha_creacion: datetime
     fecha_actualizacion: datetime
+
+
+class ServicioPublicadoLeer(ServicioLeer):
+    notificaciones_creadas: int
+    tecnicos_cercanos: int
