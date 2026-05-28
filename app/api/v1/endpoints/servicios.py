@@ -10,7 +10,9 @@ from app.api.deps import (
     TecnicoActualDep,
     UsuarioActualDep,
 )
+from app.repositorios.reporte_pago import ReportePagoDuplicadoError
 from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
+from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
     ReprogramacionServicioLeer,
     ServicioCrear,
@@ -21,6 +23,7 @@ from app.schemas.servicio import (
     ServicioReprogramar,
 )
 from app.servicios.evidencia_servicio import EvidenciaServicioServicio
+from app.servicios.reporte_pago import ReportePagoServicio
 from app.servicios.servicio import ServicioServicio
 
 router = APIRouter()
@@ -226,3 +229,25 @@ async def listar_evidencias_servicio(
             detail="Servicio no encontrado",
         )
     return evidencias
+
+
+@router.post("/{servicio_id}/reporte-pago", response_model=ReportePagoLeer)
+async def crear_reporte_pago_servicio(
+    servicio_id: UUID,
+    reporte_in: ReportePagoCrear,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> ReportePagoLeer:
+    try:
+        reporte = await ReportePagoServicio(session).crear(servicio_id, reporte_in)
+    except ReportePagoDuplicadoError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if reporte is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return reporte

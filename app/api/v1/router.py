@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     autenticacion,
     empresas_cliente,
     evidencias,
+    reportes_pago,
     sedes,
     servicios,
     tecnicos,
@@ -21,4 +22,5 @@ api_router.include_router(
 )
 api_router.include_router(servicios.router, prefix="/servicios", tags=["servicios"])
 api_router.include_router(evidencias.router, prefix="/evidencias", tags=["evidencias"])
+api_router.include_router(reportes_pago.router, prefix="/reportes-pago", tags=["reportes-pago"])
 api_router.include_router(tecnicos.router, prefix="/tecnicos", tags=["tecnicos"])
