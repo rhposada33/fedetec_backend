@@ -17,4 +17,3 @@ class SedeRepositorio:
         await self.session.commit()
         await self.session.refresh(sede)
         return sede
-

@@ -64,6 +64,7 @@ services:
                     raise TimeoutError("PostgreSQL no estuvo listo dentro de 60 segundos")
                 time.sleep(1)
         PY
+        alembic upgrade head
         fastapi dev app/main.py --host 0.0.0.0 --port 8000
     healthcheck:
       test:

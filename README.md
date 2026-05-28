@@ -64,6 +64,8 @@ Iniciar el proyecto:
 docker compose up --build
 ```
 
+El contenedor `api` espera a PostgreSQL, ejecuta `alembic upgrade head` y luego inicia FastAPI con recarga automática.
+
 Reconstruir contenedores:
 
 ```bash
@@ -74,7 +76,7 @@ docker compose up
 Ejecutar migraciones:
 
 ```bash
-docker compose run --rm api alembic upgrade head
+docker compose exec api alembic upgrade head
 ```
 
 Comprobar la API desde el host:

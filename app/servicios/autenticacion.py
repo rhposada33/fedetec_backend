@@ -18,13 +18,12 @@ class AutenticacionServicio:
         usuario = Usuario(
             correo=usuario_in.correo,
             nombre_completo=usuario_in.nombre_completo,
-            password_hash=generar_password_hash(usuario_in.password),
+            hash_contrasena=generar_password_hash(usuario_in.password),
         )
         return await self.usuarios.crear(usuario)
 
     async def autenticar(self, correo: str, password: str) -> str | None:
         usuario = await self.usuarios.obtener_por_correo(correo)
-        if usuario is None or not verificar_password(password, usuario.password_hash):
+        if usuario is None or not verificar_password(password, usuario.hash_contrasena):
             return None
         return crear_token_acceso(usuario.id)
-

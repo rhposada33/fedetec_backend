@@ -17,4 +17,3 @@ async def crear_sede(
     sede_in: SedeCrear, session: SesionDep, _usuario_actual: UsuarioActualDep
 ) -> SedeLeer:
     return await SedeServicio(session).crear(sede_in)
-

@@ -1,4 +1,5 @@
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,12 +24,12 @@ async def obtener_usuario_actual(session: SesionDep, token: TokenDep) -> Usuario
     )
     try:
         payload = decodificar_token(token)
-        usuario_id = int(payload.get("sub"))
+        usuario_id = UUID(str(payload.get("sub")))
     except (TypeError, ValueError):
         raise credenciales_error from None
 
     usuario = await UsuarioRepositorio(session).obtener_por_id(usuario_id)
-    if usuario is None or not usuario.es_activo:
+    if usuario is None or not usuario.esta_activo:
         raise credenciales_error
     return usuario
 

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -8,7 +10,7 @@ class UsuarioRepositorio:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def obtener_por_id(self, usuario_id: int) -> Usuario | None:
+    async def obtener_por_id(self, usuario_id: UUID) -> Usuario | None:
         return await self.session.get(Usuario, usuario_id)
 
     async def obtener_por_correo(self, correo: str) -> Usuario | None:
@@ -20,4 +22,3 @@ class UsuarioRepositorio:
         await self.session.commit()
         await self.session.refresh(usuario)
         return usuario
-

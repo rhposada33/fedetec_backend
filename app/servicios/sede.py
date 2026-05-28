@@ -20,4 +20,3 @@ class SedeServicio:
 
         sede = Sede(nombre=sede_in.nombre, direccion=sede_in.direccion, ubicacion=ubicacion)
         return await self.sedes.crear(sede)
-

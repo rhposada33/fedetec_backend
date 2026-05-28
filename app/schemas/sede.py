@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,10 +16,9 @@ class SedeCrear(SedeBase):
 
 
 class SedeLeer(BaseModel):
-    id: int
+    id: UUID
     nombre: str
     direccion: str | None
     creado_en: datetime
 
     model_config = ConfigDict(from_attributes=True)
-
