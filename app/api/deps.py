@@ -11,7 +11,7 @@ from app.core.security import decodificar_token
 from app.modelos.usuario import Usuario
 from app.repositorios.usuario import UsuarioRepositorio
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/autenticacion/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/autenticacion/login")
 SesionDep = Annotated[AsyncSession, Depends(get_db)]
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 

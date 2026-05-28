@@ -41,7 +41,9 @@ La API expone:
 - `GET /health`
 - `GET /salud`
 - `POST /api/v1/autenticacion/registro`
-- `POST /api/v1/autenticacion/token`
+- `POST /api/v1/autenticacion/registro/tecnico`
+- `POST /api/v1/autenticacion/login`
+- `GET /api/v1/autenticacion/yo`
 - `GET /api/v1/usuarios/me`
 - `POST /api/v1/sedes`
 - `GET /api/v1/sedes`
