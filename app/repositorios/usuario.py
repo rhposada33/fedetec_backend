@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.usuario import Usuario
 from app.modelos.usuario_rol import UsuarioRol
 
@@ -21,6 +22,9 @@ class UsuarioRepositorio:
             .options(
                 selectinload(Usuario.roles).selectinload(UsuarioRol.rol),
                 selectinload(Usuario.tecnico),
+                selectinload(Usuario.empresa_cliente).load_only(
+                    EmpresaCliente.id, EmpresaCliente.esta_activa
+                ),
             )
             .where(Usuario.id == usuario_id)
         )

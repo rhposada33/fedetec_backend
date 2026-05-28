@@ -56,11 +56,12 @@ def test_requerir_admin_rechaza_usuario_no_admin() -> None:
     assert exc_info.value.status_code == 403
 
 
-def test_endpoints_empresas_cliente_exponen_api_key_solo_al_crear(
+def test_endpoints_empresas_cliente_no_exponen_api_key(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     empresa = SimpleNamespace(
         id=EMPRESA_ID,
+        usuario_id=UUID("22222222-2222-2222-2222-222222222222"),
         nombre="Cliente Demo",
         identificacion_tributaria="900123456",
         correo_contacto="contacto@example.com",
@@ -73,8 +74,8 @@ def test_endpoints_empresas_cliente_exponen_api_key_solo_al_crear(
         def __init__(self, session: object) -> None:
             self.session = session
 
-        async def crear(self, empresa_in: object) -> tuple[SimpleNamespace, str]:
-            return empresa, "fedetec_api_key_plana"
+        async def crear(self, empresa_in: object) -> SimpleNamespace:
+            return empresa
 
         async def listar(self) -> list[SimpleNamespace]:
             return [empresa]
@@ -98,6 +99,7 @@ def test_endpoints_empresas_cliente_exponen_api_key_solo_al_crear(
         "correo_contacto": "contacto@example.com",
         "telefono_contacto": "3001234567",
         "esta_activa": True,
+        "password": "Fedetec123!",
     }
 
     crear_response = client.post("/api/v1/empresas-cliente", json=payload)
@@ -108,7 +110,8 @@ def test_endpoints_empresas_cliente_exponen_api_key_solo_al_crear(
     )
 
     assert crear_response.status_code == 201
-    assert crear_response.json()["api_key"] == "fedetec_api_key_plana"
+    assert crear_response.json()["usuario_id"] == str(empresa.usuario_id)
+    assert "api_key" not in crear_response.json()
     assert "hash_api_key" not in crear_response.json()
 
     assert listar_response.status_code == 200

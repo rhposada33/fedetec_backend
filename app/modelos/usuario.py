@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.modelos.empresa_cliente import EmpresaCliente
     from app.modelos.evidencia_servicio import EvidenciaServicio
     from app.modelos.tecnico import Tecnico
     from app.modelos.usuario_rol import UsuarioRol
@@ -46,6 +47,9 @@ class Usuario(Base):
         back_populates="usuario", cascade="all, delete-orphan"
     )
     tecnico: Mapped[Tecnico | None] = relationship(back_populates="usuario", uselist=False)
+    empresa_cliente: Mapped[EmpresaCliente | None] = relationship(
+        back_populates="usuario", uselist=False
+    )
     evidencias_subidas: Mapped[list[EvidenciaServicio]] = relationship(
         back_populates="subido_por_usuario",
         foreign_keys="EvidenciaServicio.subido_por_usuario_id",

@@ -63,14 +63,16 @@ def test_post_servicio_rechaza_tipo_invalido() -> None:
         yield object()
 
     app.dependency_overrides[get_db] = obtener_db_fake
-    app.dependency_overrides[deps.obtener_empresa_cliente_por_api_key] = lambda: SimpleNamespace(
-        id=EMPRESA_ID
+    app.dependency_overrides[deps.obtener_usuario_actual] = lambda: SimpleNamespace(
+        roles=[SimpleNamespace(rol=SimpleNamespace(nombre="ADMIN"))],
+        empresa_cliente=None,
     )
 
     response = client.post(
         "/api/v1/servicios",
-        headers={"X-API-Key": "fedetec_api_key_valida", "Idempotency-Key": "req-1"},
+        headers={"Authorization": "Bearer token-fake", "Idempotency-Key": "req-1"},
         json={
+            "empresa_cliente_id": str(EMPRESA_ID),
             "tipo_servicio": 99,
             "latitud": 4.711,
             "longitud": -74.0721,
@@ -136,14 +138,16 @@ def test_post_servicio_requiere_idempotency_key() -> None:
         yield object()
 
     app.dependency_overrides[get_db] = obtener_db_fake
-    app.dependency_overrides[deps.obtener_empresa_cliente_por_api_key] = lambda: SimpleNamespace(
-        id=EMPRESA_ID
+    app.dependency_overrides[deps.obtener_usuario_actual] = lambda: SimpleNamespace(
+        roles=[SimpleNamespace(rol=SimpleNamespace(nombre="ADMIN"))],
+        empresa_cliente=None,
     )
 
     response = client.post(
         "/api/v1/servicios",
-        headers={"X-API-Key": "fedetec_api_key_valida"},
+        headers={"Authorization": "Bearer token-fake"},
         json={
+            "empresa_cliente_id": str(EMPRESA_ID),
             "tipo_servicio": 1,
             "latitud": 4.711,
             "longitud": -74.0721,

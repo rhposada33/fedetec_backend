@@ -58,10 +58,18 @@ class ServicioServicio:
         servicios = await self.servicios.listar_por_empresa(empresa_cliente.id)
         return [self._serializar(servicio) for servicio in servicios]
 
+    async def listar_admin(self) -> list[ServicioLeer]:
+        servicios = await self.servicios.listar_admin()
+        return [self._serializar(servicio) for servicio in servicios]
+
     async def obtener(
         self, servicio_id: UUID, empresa_cliente: EmpresaCliente
     ) -> ServicioLeer | None:
         servicio = await self.servicios.obtener_por_id_y_empresa(servicio_id, empresa_cliente.id)
+        return self._serializar(servicio) if servicio is not None else None
+
+    async def obtener_admin(self, servicio_id: UUID) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id(servicio_id)
         return self._serializar(servicio) if servicio is not None else None
 
     async def publicar(

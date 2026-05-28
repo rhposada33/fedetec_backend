@@ -80,6 +80,7 @@ def upgrade() -> None:
         sa.Column("identificacion_tributaria", sa.String(length=80), nullable=True),
         sa.Column("correo_contacto", sa.String(length=150), nullable=True),
         sa.Column("telefono_contacto", sa.String(length=50), nullable=True),
+        sa.Column("usuario_id", postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column("hash_api_key", sa.Text(), nullable=True),
         sa.Column("esta_activa", sa.Boolean(), nullable=False, server_default=sa.text("true")),
         sa.Column(
@@ -88,7 +89,9 @@ def upgrade() -> None:
             nullable=False,
             server_default=sa.text("now()"),
         ),
+        sa.ForeignKeyConstraint(["usuario_id"], ["usuarios.id"]),
         sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("usuario_id", name="uq_empresas_cliente_usuario_id"),
     )
 
     op.create_table(

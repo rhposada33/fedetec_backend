@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal
 from app.core.security import generar_password_hash
+from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.rol import Rol
 from app.modelos.tecnico import Tecnico
 from app.modelos.usuario import Usuario
@@ -18,6 +19,7 @@ ROLES_VALIDOS = ("ADMIN", "TECNICO", "EMPRESA_CLIENTE")
 CORREOS_DEMO_LEGACY = {
     "admin@fedetec.test": "admin@fedetec.dev",
     "tecnico@fedetec.test": "tecnico@fedetec.dev",
+    "empresa@fedetec.test": "empresa@fedetec.dev",
 }
 
 
@@ -28,6 +30,7 @@ class UsuarioSeed:
     nombre: str
     roles: tuple[str, ...]
     telefono: str | None = None
+    identificacion_tributaria: str | None = None
 
 
 async def obtener_o_crear_rol(session: AsyncSession, nombre: str) -> Rol:
@@ -76,6 +79,39 @@ async def usuario_tiene_tecnico(session: AsyncSession, usuario: Usuario) -> bool
     return tecnico_id is not None
 
 
+async def obtener_empresa_por_usuario(
+    session: AsyncSession, usuario: Usuario
+) -> EmpresaCliente | None:
+    return await session.scalar(
+        select(EmpresaCliente).where(EmpresaCliente.usuario_id == usuario.id)
+    )
+
+
+async def crear_o_actualizar_empresa_cliente(
+    session: AsyncSession, usuario: Usuario, seed: UsuarioSeed
+) -> None:
+    empresa = await obtener_empresa_por_usuario(session, usuario)
+    if empresa is None:
+        session.add(
+            EmpresaCliente(
+                usuario_id=usuario.id,
+                nombre=seed.nombre,
+                identificacion_tributaria=seed.identificacion_tributaria,
+                correo_contacto=seed.correo,
+                telefono_contacto=seed.telefono,
+                hash_api_key=None,
+                esta_activa=True,
+            )
+        )
+        return
+
+    empresa.nombre = seed.nombre
+    empresa.identificacion_tributaria = seed.identificacion_tributaria
+    empresa.correo_contacto = seed.correo
+    empresa.telefono_contacto = seed.telefono
+    empresa.esta_activa = True
+
+
 async def crear_o_actualizar_usuario(
     session: AsyncSession,
     seed: UsuarioSeed,
@@ -113,6 +149,9 @@ async def crear_o_actualizar_usuario(
     if "TECNICO" in seed.roles and not await usuario_tiene_tecnico(session, usuario):
         session.add(Tecnico(usuario_id=usuario.id, esta_disponible=True))
 
+    if "EMPRESA_CLIENTE" in seed.roles:
+        await crear_o_actualizar_empresa_cliente(session, usuario, seed)
+
     await session.commit()
     await session.refresh(usuario)
     return usuario
@@ -132,6 +171,14 @@ async def crear_demo(password: str, actualizar_password: bool) -> list[Usuario]:
             nombre="Tecnico Fedetec Test",
             roles=("TECNICO",),
             telefono="+57 300 000 0000",
+        ),
+        UsuarioSeed(
+            correo="empresa@fedetec.dev",
+            password=password,
+            nombre="Empresa Fedetec Test",
+            roles=("EMPRESA_CLIENTE",),
+            telefono="+57 301 000 0000",
+            identificacion_tributaria="900000001",
         ),
     ]
 
@@ -155,6 +202,7 @@ async def crear_unico(args: argparse.Namespace) -> Usuario:
         nombre=args.nombre,
         roles=tuple(args.rol),
         telefono=args.telefono,
+        identificacion_tributaria=args.identificacion_tributaria,
     )
     async with AsyncSessionLocal() as session:
         return await crear_o_actualizar_usuario(
@@ -171,7 +219,12 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--demo",
         action="store_true",
-        help="Crea admin@fedetec.dev y tecnico@fedetec.dev.",
+        help="Crea admin@fedetec.dev, tecnico@fedetec.dev y empresa@fedetec.dev.",
+    )
+    parser.add_argument(
+        "--empresa",
+        action="store_true",
+        help="Crea o actualiza un usuario EMPRESA_CLIENTE con empresa cliente vinculada.",
     )
     parser.add_argument(
         "--correo",
@@ -196,6 +249,10 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--telefono", help="Telefono opcional.")
     parser.add_argument(
+        "--identificacion-tributaria",
+        help="NIT o identificacion tributaria para usuarios empresa.",
+    )
+    parser.add_argument(
         "--no-reset-password",
         action="store_true",
         help="No cambia el password si el usuario ya existe.",
@@ -214,7 +271,9 @@ async def ejecutar(args: argparse.Namespace) -> None:
         raise SystemExit("Debes usar --correo o --demo.")
 
     if not args.rol:
-        args.rol = ["ADMIN"]
+        args.rol = ["EMPRESA_CLIENTE"] if args.empresa else ["ADMIN"]
+    if args.empresa and "EMPRESA_CLIENTE" not in args.rol:
+        args.rol.append("EMPRESA_CLIENTE")
 
     usuario = await crear_unico(args)
     print(f"OK {usuario.correo}")

@@ -18,9 +18,12 @@ router = APIRouter()
 async def crear_empresa_cliente(
     empresa_in: EmpresaClienteCrear, session: SesionDep, _admin: AdminDep
 ) -> EmpresaClienteCreada:
-    empresa, api_key = await EmpresaClienteServicio(session).crear(empresa_in)
+    try:
+        empresa = await EmpresaClienteServicio(session).crear(empresa_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     empresa_leer = EmpresaClienteLeer.model_validate(empresa, from_attributes=True)
-    return EmpresaClienteCreada(**empresa_leer.model_dump(), api_key=api_key)
+    return EmpresaClienteCreada(**empresa_leer.model_dump())
 
 
 @router.get("", response_model=list[EmpresaClienteLeer])

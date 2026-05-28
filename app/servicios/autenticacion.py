@@ -95,9 +95,13 @@ class AutenticacionServicio:
     ) -> UsuarioAutenticadoLeer:
         nombres_roles = roles or [usuario_rol.rol.nombre for usuario_rol in usuario.roles]
         id_tecnico = tecnico_id or (usuario.tecnico.id if usuario.tecnico is not None else None)
+        empresa_cliente_id = (
+            usuario.empresa_cliente.id if usuario.empresa_cliente is not None else None
+        )
         return UsuarioAutenticadoLeer(
             id=usuario.id,
             tecnico_id=id_tecnico,
+            empresa_cliente_id=empresa_cliente_id,
             correo=usuario.correo,
             nombre_completo=usuario.nombre_completo,
             telefono=usuario.telefono,

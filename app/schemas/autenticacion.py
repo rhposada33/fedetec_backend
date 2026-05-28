@@ -22,6 +22,7 @@ class TecnicoRegistrar(BaseModel):
 class UsuarioAutenticadoLeer(BaseModel):
     id: UUID
     tecnico_id: UUID | None = None
+    empresa_cliente_id: UUID | None = None
     correo: EmailStr
     nombre_completo: str
     telefono: str | None = None

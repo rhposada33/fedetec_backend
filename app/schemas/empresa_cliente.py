@@ -13,7 +13,7 @@ class EmpresaClienteBase(BaseModel):
 
 
 class EmpresaClienteCrear(EmpresaClienteBase):
-    pass
+    password: str = Field(min_length=8, max_length=128)
 
 
 class EmpresaClienteActualizar(BaseModel):
@@ -26,10 +26,11 @@ class EmpresaClienteActualizar(BaseModel):
 
 class EmpresaClienteLeer(EmpresaClienteBase):
     id: UUID
+    usuario_id: UUID | None = None
     fecha_creacion: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class EmpresaClienteCreada(EmpresaClienteLeer):
-    api_key: str
+    pass

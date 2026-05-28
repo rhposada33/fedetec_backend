@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ServicioCrear(BaseModel):
+    empresa_cliente_id: UUID | None = None
     tipo_servicio: Literal[1, 2, 3]
     placa_vehiculo: str | None = Field(default=None, max_length=30)
     latitud: float = Field(ge=-90, le=90)

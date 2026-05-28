@@ -5,11 +5,14 @@ from fastapi import APIRouter, Header, HTTPException, Query, status
 
 from app.api.deps import (
     AdminDep,
-    EmpresaClienteApiKeyDep,
     SesionDep,
     TecnicoActualDep,
     UsuarioActualDep,
+    usuario_es_admin,
+    usuario_es_empresa_cliente,
 )
+from app.modelos.empresa_cliente import EmpresaCliente
+from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError
 from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
 from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
@@ -33,7 +36,7 @@ router = APIRouter()
 async def crear_servicio(
     servicio_in: ServicioCrear,
     session: SesionDep,
-    empresa_cliente: EmpresaClienteApiKeyDep,
+    usuario_actual: UsuarioActualDep,
     idempotency_key: Annotated[
         str | None, Header(alias="Idempotency-Key", max_length=150)
     ] = None,
@@ -44,6 +47,9 @@ async def crear_servicio(
             detail="Header Idempotency-Key requerido",
         )
 
+    empresa_cliente = await _resolver_empresa_para_crear_servicio(
+        session, usuario_actual, servicio_in
+    )
     return await ServicioServicio(session).crear(
         servicio_in, empresa_cliente, idempotency_key.strip()
     )
@@ -51,22 +57,68 @@ async def crear_servicio(
 
 @router.get("", response_model=list[ServicioLeer])
 async def listar_servicios(
-    session: SesionDep, empresa_cliente: EmpresaClienteApiKeyDep
+    session: SesionDep, usuario_actual: UsuarioActualDep
 ) -> list[ServicioLeer]:
-    return await ServicioServicio(session).listar(empresa_cliente)
+    servicio = ServicioServicio(session)
+    if usuario_es_admin(usuario_actual):
+        return await servicio.listar_admin()
+    if usuario_es_empresa_cliente(usuario_actual) and usuario_actual.empresa_cliente is not None:
+        return await servicio.listar(usuario_actual.empresa_cliente)
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado")
 
 
 @router.get("/{servicio_id}", response_model=ServicioLeer)
 async def obtener_servicio(
-    servicio_id: UUID, session: SesionDep, empresa_cliente: EmpresaClienteApiKeyDep
+    servicio_id: UUID, session: SesionDep, usuario_actual: UsuarioActualDep
 ) -> ServicioLeer:
-    servicio = await ServicioServicio(session).obtener(servicio_id, empresa_cliente)
+    servicio_servicio = ServicioServicio(session)
+    if usuario_es_admin(usuario_actual):
+        servicio = await servicio_servicio.obtener_admin(servicio_id)
+    elif usuario_es_empresa_cliente(usuario_actual) and usuario_actual.empresa_cliente is not None:
+        servicio = await servicio_servicio.obtener(servicio_id, usuario_actual.empresa_cliente)
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado")
     if servicio is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Servicio no encontrado",
         )
     return servicio
+
+
+async def _resolver_empresa_para_crear_servicio(
+    session: SesionDep, usuario_actual: UsuarioActualDep, servicio_in: ServicioCrear
+) -> EmpresaCliente:
+    if usuario_es_admin(usuario_actual):
+        if servicio_in.empresa_cliente_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="empresa_cliente_id es requerido para administradores",
+            )
+        empresa = await EmpresaClienteRepositorio(session).obtener_por_id(
+            servicio_in.empresa_cliente_id
+        )
+        if empresa is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Empresa cliente no encontrada",
+            )
+        if not empresa.esta_activa:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La empresa cliente no esta activa",
+            )
+        return empresa
+
+    if usuario_es_empresa_cliente(usuario_actual) and usuario_actual.empresa_cliente is not None:
+        if not usuario_actual.empresa_cliente.esta_activa:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="La empresa cliente no esta activa",
+            )
+        return usuario_actual.empresa_cliente
+
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado")
 
 
 @router.post("/{servicio_id}/publicar", response_model=ServicioPublicadoLeer)

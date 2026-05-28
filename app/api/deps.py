@@ -64,6 +64,30 @@ def requerir_tecnico(usuario_actual: UsuarioActualDep) -> Tecnico:
 TecnicoActualDep = Annotated[Tecnico, Depends(requerir_tecnico)]
 
 
+def usuario_es_admin(usuario: Usuario) -> bool:
+    return any(usuario_rol.rol.nombre == "ADMIN" for usuario_rol in usuario.roles)
+
+
+def usuario_es_empresa_cliente(usuario: Usuario) -> bool:
+    return any(usuario_rol.rol.nombre == "EMPRESA_CLIENTE" for usuario_rol in usuario.roles)
+
+
+def requerir_empresa_cliente(usuario_actual: UsuarioActualDep) -> EmpresaCliente:
+    if (
+        not usuario_es_empresa_cliente(usuario_actual)
+        or usuario_actual.empresa_cliente is None
+        or not usuario_actual.empresa_cliente.esta_activa
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere perfil de empresa cliente activa",
+        )
+    return usuario_actual.empresa_cliente
+
+
+EmpresaClienteActualDep = Annotated[EmpresaCliente, Depends(requerir_empresa_cliente)]
+
+
 async def obtener_empresa_cliente_por_api_key(
     session: SesionDep, x_api_key: Annotated[str | None, Header()] = None
 ) -> EmpresaCliente:
