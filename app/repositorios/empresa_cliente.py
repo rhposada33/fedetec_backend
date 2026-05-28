@@ -14,6 +14,12 @@ class EmpresaClienteRepositorio:
         stmt = select(EmpresaCliente).order_by(EmpresaCliente.nombre)
         return list(await self.session.scalars(stmt))
 
+    async def listar_admin(self, esta_activa: bool | None = None) -> list[EmpresaCliente]:
+        stmt = select(EmpresaCliente).order_by(EmpresaCliente.nombre)
+        if esta_activa is not None:
+            stmt = stmt.where(EmpresaCliente.esta_activa.is_(esta_activa))
+        return list(await self.session.scalars(stmt))
+
     async def listar_activas_con_api_key(self) -> list[EmpresaCliente]:
         stmt = (
             select(EmpresaCliente)

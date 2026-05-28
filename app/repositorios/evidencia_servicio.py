@@ -18,6 +18,14 @@ class EvidenciaServicioRepositorio:
         )
         return list(await self.session.scalars(stmt))
 
+    async def listar_pendientes(self) -> list[EvidenciaServicio]:
+        stmt = (
+            select(EvidenciaServicio)
+            .where(EvidenciaServicio.estado_aprobacion == "PENDIENTE")
+            .order_by(EvidenciaServicio.fecha_creacion.desc())
+        )
+        return list(await self.session.scalars(stmt))
+
     async def obtener_por_id(self, evidencia_id: UUID) -> EvidenciaServicio | None:
         return await self.session.get(EvidenciaServicio, evidencia_id)
 

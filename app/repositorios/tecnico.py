@@ -26,6 +26,12 @@ class TecnicoRepositorio:
         row = (await self.session.execute(stmt)).one_or_none()
         return TecnicoConUbicacion(*row) if row else None
 
+    async def listar_admin(self, esta_disponible: bool | None = None) -> list[TecnicoConUbicacion]:
+        stmt = self._select_con_ubicacion().order_by(Tecnico.fecha_creacion.desc())
+        if esta_disponible is not None:
+            stmt = stmt.where(Tecnico.esta_disponible.is_(esta_disponible))
+        return [TecnicoConUbicacion(*row) for row in (await self.session.execute(stmt)).all()]
+
     async def guardar(self, tecnico: Tecnico) -> Tecnico:
         await self.session.commit()
         await self.session.refresh(tecnico)
