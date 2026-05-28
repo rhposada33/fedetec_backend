@@ -36,6 +36,30 @@ alembic upgrade head
 fastapi dev app/main.py
 ```
 
+## Usuarios de prueba
+
+Crear o actualizar un ADMIN y un TECNICO para pruebas manuales:
+
+```bash
+python -m app.scripts.crear_usuario --demo --password Fedetec123!
+```
+
+Crear un usuario específico:
+
+```bash
+python -m app.scripts.crear_usuario \
+  --correo admin@fedetec.test \
+  --password Fedetec123! \
+  --nombre "Admin Fedetec Test" \
+  --rol ADMIN
+```
+
+Si ejecutas el backend con Docker:
+
+```bash
+docker compose exec api python -m app.scripts.crear_usuario --demo --password Fedetec123!
+```
+
 La API expone:
 
 - `GET /health`
@@ -59,6 +83,8 @@ cp .env.example .env
 Docker Compose configura `DATABASE_URL` automáticamente apuntando al servicio interno `postgres`. Para ejecución sin Docker, usa el `DATABASE_URL` de `.env.example`, que apunta a `localhost`.
 
 Si quieres cambiar el modo debug de Docker, usa `APP_DEBUG=true` o `APP_DEBUG=false` en `.env`; Compose lo traduce a la variable `DEBUG` que lee la aplicación.
+
+Para usar el frontend local, `BACKEND_CORS_ORIGINS` debe incluir el origen exacto de Vite, por ejemplo `http://localhost:8080` o `http://localhost:8081`.
 
 Iniciar el proyecto:
 
