@@ -5,13 +5,13 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.database import obtener_sesion
+from app.core.database import get_db
 from app.core.security import decodificar_token
 from app.modelos.usuario import Usuario
 from app.repositorios.usuario import UsuarioRepositorio
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/autenticacion/token")
-SesionDep = Annotated[AsyncSession, Depends(obtener_sesion)]
+SesionDep = Annotated[AsyncSession, Depends(get_db)]
 TokenDep = Annotated[str, Depends(oauth2_scheme)]
 
 
@@ -34,4 +34,3 @@ async def obtener_usuario_actual(session: SesionDep, token: TokenDep) -> Usuario
 
 
 UsuarioActualDep = Annotated[Usuario, Depends(obtener_usuario_actual)]
-

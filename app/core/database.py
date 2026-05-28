@@ -13,10 +13,13 @@ class Base(DeclarativeBase):
 
 
 engine = create_async_engine(settings.DATABASE_URL, pool_pre_ping=True)
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, autoflush=False)
+SessionLocal = AsyncSessionLocal
 
 
-async def obtener_sesion() -> AsyncGenerator[AsyncSession, None]:
-    async with SessionLocal() as session:
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
         yield session
 
+
+obtener_sesion = get_db

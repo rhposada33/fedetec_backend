@@ -28,8 +28,15 @@ def upgrade() -> None:
         sa.Column("password_hash", sa.String(length=255), nullable=False),
         sa.Column("es_activo", sa.Boolean(), nullable=False),
         sa.Column("es_superusuario", sa.Boolean(), nullable=False),
-        sa.Column("creado_en", sa.DateTime(timezone=True), server_default=sa.text("now()")),
-        sa.Column("actualizado_en", sa.DateTime(timezone=True), server_default=sa.text("now()")),
+        sa.Column(
+            "creado_en", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "actualizado_en",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_usuarios_correo"), "usuarios", ["correo"], unique=True)
@@ -51,8 +58,15 @@ def upgrade() -> None:
             ),
             nullable=True,
         ),
-        sa.Column("creado_en", sa.DateTime(timezone=True), server_default=sa.text("now()")),
-        sa.Column("actualizado_en", sa.DateTime(timezone=True), server_default=sa.text("now()")),
+        sa.Column(
+            "creado_en", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
+        sa.Column(
+            "actualizado_en",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(op.f("ix_sedes_id"), "sedes", ["id"], unique=False)
