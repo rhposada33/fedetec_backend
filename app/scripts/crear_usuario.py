@@ -15,6 +15,10 @@ from app.modelos.usuario import Usuario
 from app.modelos.usuario_rol import UsuarioRol
 
 ROLES_VALIDOS = ("ADMIN", "TECNICO", "EMPRESA_CLIENTE")
+CORREOS_DEMO_LEGACY = {
+    "admin@fedetec.test": "admin@fedetec.dev",
+    "tecnico@fedetec.test": "tecnico@fedetec.dev",
+}
 
 
 @dataclass(frozen=True)
@@ -41,6 +45,21 @@ async def obtener_usuario(session: AsyncSession, correo: str) -> Usuario | None:
     return await session.scalar(select(Usuario).where(Usuario.correo == correo))
 
 
+async def migrar_correo_demo_legacy(session: AsyncSession, correo: str) -> None:
+    correo_legacy = next(
+        (legacy for legacy, actual in CORREOS_DEMO_LEGACY.items() if actual == correo),
+        None,
+    )
+    if correo_legacy is None:
+        return
+
+    usuario_actual = await obtener_usuario(session, correo)
+    usuario_legacy = await obtener_usuario(session, correo_legacy)
+    if usuario_actual is None and usuario_legacy is not None:
+        usuario_legacy.correo = correo
+        await session.flush()
+
+
 async def obtener_roles_usuario(session: AsyncSession, usuario: Usuario) -> set[str]:
     resultado = await session.scalars(
         select(Rol.nombre)
@@ -63,6 +82,7 @@ async def crear_o_actualizar_usuario(
     *,
     actualizar_password: bool = True,
 ) -> Usuario:
+    await migrar_correo_demo_legacy(session, seed.correo)
     usuario = await obtener_usuario(session, seed.correo)
     password_hash = generar_password_hash(seed.password)
 
@@ -101,13 +121,13 @@ async def crear_o_actualizar_usuario(
 async def crear_demo(password: str, actualizar_password: bool) -> list[Usuario]:
     seeds = [
         UsuarioSeed(
-            correo="admin@fedetec.test",
+            correo="admin@fedetec.dev",
             password=password,
             nombre="Admin Fedetec Test",
             roles=("ADMIN",),
         ),
         UsuarioSeed(
-            correo="tecnico@fedetec.test",
+            correo="tecnico@fedetec.dev",
             password=password,
             nombre="Tecnico Fedetec Test",
             roles=("TECNICO",),
@@ -151,7 +171,7 @@ def construir_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--demo",
         action="store_true",
-        help="Crea admin@fedetec.test y tecnico@fedetec.test.",
+        help="Crea admin@fedetec.dev y tecnico@fedetec.dev.",
     )
     parser.add_argument(
         "--correo",

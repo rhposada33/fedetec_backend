@@ -44,11 +44,18 @@ Crear o actualizar un ADMIN y un TECNICO para pruebas manuales:
 python -m app.scripts.crear_usuario --demo --password Fedetec123!
 ```
 
+Credenciales generadas:
+
+```text
+admin@fedetec.dev / Fedetec123!
+tecnico@fedetec.dev / Fedetec123!
+```
+
 Crear un usuario específico:
 
 ```bash
 python -m app.scripts.crear_usuario \
-  --correo admin@fedetec.test \
+  --correo admin@fedetec.dev \
   --password Fedetec123! \
   --nombre "Admin Fedetec Test" \
   --rol ADMIN
