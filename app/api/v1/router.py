@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     autenticacion,
     empresas_cliente,
+    evidencias,
     sedes,
     servicios,
     tecnicos,
@@ -17,4 +18,5 @@ api_router.include_router(
     empresas_cliente.router, prefix="/empresas-cliente", tags=["empresas-cliente"]
 )
 api_router.include_router(servicios.router, prefix="/servicios", tags=["servicios"])
+api_router.include_router(evidencias.router, prefix="/evidencias", tags=["evidencias"])
 api_router.include_router(tecnicos.router, prefix="/tecnicos", tags=["tecnicos"])

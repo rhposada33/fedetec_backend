@@ -3,7 +3,14 @@ from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Query, status
 
-from app.api.deps import AdminDep, EmpresaClienteApiKeyDep, SesionDep, TecnicoActualDep
+from app.api.deps import (
+    AdminDep,
+    EmpresaClienteApiKeyDep,
+    SesionDep,
+    TecnicoActualDep,
+    UsuarioActualDep,
+)
+from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
 from app.schemas.servicio import (
     ReprogramacionServicioLeer,
     ServicioCrear,
@@ -13,6 +20,7 @@ from app.schemas.servicio import (
     ServicioRechazar,
     ServicioReprogramar,
 )
+from app.servicios.evidencia_servicio import EvidenciaServicioServicio
 from app.servicios.servicio import ServicioServicio
 
 router = APIRouter()
@@ -175,3 +183,46 @@ async def finalizar_servicio(
             detail="Servicio no encontrado",
         )
     return servicio
+
+
+@router.post("/{servicio_id}/evidencias", response_model=EvidenciaServicioLeer)
+async def crear_evidencia_servicio(
+    servicio_id: UUID,
+    evidencia_in: EvidenciaServicioCrear,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> EvidenciaServicioLeer:
+    try:
+        evidencia = await EvidenciaServicioServicio(session).crear(
+            servicio_id, tecnico_actual, evidencia_in
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    if evidencia is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return evidencia
+
+
+@router.get("/{servicio_id}/evidencias", response_model=list[EvidenciaServicioLeer])
+async def listar_evidencias_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    usuario_actual: UsuarioActualDep,
+) -> list[EvidenciaServicioLeer]:
+    try:
+        evidencias = await EvidenciaServicioServicio(session).listar_por_servicio(
+            servicio_id, usuario_actual
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    if evidencias is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return evidencias
