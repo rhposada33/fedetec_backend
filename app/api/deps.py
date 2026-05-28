@@ -28,10 +28,22 @@ async def obtener_usuario_actual(session: SesionDep, token: TokenDep) -> Usuario
     except (TypeError, ValueError):
         raise credenciales_error from None
 
-    usuario = await UsuarioRepositorio(session).obtener_por_id(usuario_id)
+    usuario = await UsuarioRepositorio(session).obtener_por_id_con_autenticacion(usuario_id)
     if usuario is None or not usuario.esta_activo:
         raise credenciales_error
     return usuario
 
 
 UsuarioActualDep = Annotated[Usuario, Depends(obtener_usuario_actual)]
+
+
+def requerir_admin(usuario_actual: UsuarioActualDep) -> Usuario:
+    if not any(usuario_rol.rol.nombre == "ADMIN" for usuario_rol in usuario_actual.roles):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requieren permisos de administrador",
+        )
+    return usuario_actual
+
+
+AdminDep = Annotated[Usuario, Depends(requerir_admin)]
