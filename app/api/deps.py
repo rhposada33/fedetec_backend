@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decodificar_token, verificar_api_key
 from app.modelos.empresa_cliente import EmpresaCliente
+from app.modelos.tecnico import Tecnico
 from app.modelos.usuario import Usuario
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.usuario import UsuarioRepositorio
@@ -49,6 +50,18 @@ def requerir_admin(usuario_actual: UsuarioActualDep) -> Usuario:
 
 
 AdminDep = Annotated[Usuario, Depends(requerir_admin)]
+
+
+def requerir_tecnico(usuario_actual: UsuarioActualDep) -> Tecnico:
+    if usuario_actual.tecnico is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere perfil de tecnico",
+        )
+    return usuario_actual.tecnico
+
+
+TecnicoActualDep = Annotated[Tecnico, Depends(requerir_tecnico)]
 
 
 async def obtener_empresa_cliente_por_api_key(
