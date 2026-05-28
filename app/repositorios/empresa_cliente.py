@@ -14,6 +14,14 @@ class EmpresaClienteRepositorio:
         stmt = select(EmpresaCliente).order_by(EmpresaCliente.nombre)
         return list(await self.session.scalars(stmt))
 
+    async def listar_activas_con_api_key(self) -> list[EmpresaCliente]:
+        stmt = (
+            select(EmpresaCliente)
+            .where(EmpresaCliente.esta_activa.is_(True))
+            .where(EmpresaCliente.hash_api_key.is_not(None))
+        )
+        return list(await self.session.scalars(stmt))
+
     async def obtener_por_id(self, empresa_id: UUID) -> EmpresaCliente | None:
         return await self.session.get(EmpresaCliente, empresa_id)
 

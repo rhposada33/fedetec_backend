@@ -1,14 +1,16 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import decodificar_token
+from app.core.security import decodificar_token, verificar_api_key
+from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.usuario import Usuario
+from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.usuario import UsuarioRepositorio
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/autenticacion/login")
@@ -47,3 +49,26 @@ def requerir_admin(usuario_actual: UsuarioActualDep) -> Usuario:
 
 
 AdminDep = Annotated[Usuario, Depends(requerir_admin)]
+
+
+async def obtener_empresa_cliente_por_api_key(
+    session: SesionDep, x_api_key: Annotated[str | None, Header()] = None
+) -> EmpresaCliente:
+    if not x_api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key requerida",
+        )
+
+    empresas = await EmpresaClienteRepositorio(session).listar_activas_con_api_key()
+    for empresa in empresas:
+        if empresa.hash_api_key and verificar_api_key(x_api_key, empresa.hash_api_key):
+            return empresa
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="API key invalida",
+    )
+
+
+EmpresaClienteApiKeyDep = Annotated[EmpresaCliente, Depends(obtener_empresa_cliente_por_api_key)]
