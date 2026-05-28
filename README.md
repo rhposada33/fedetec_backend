@@ -49,6 +49,7 @@ Credenciales generadas:
 ```text
 admin@fedetec.dev / Fedetec123!
 tecnico@fedetec.dev / Fedetec123!
+empresa@fedetec.dev / Fedetec123!
 ```
 
 Crear un usuario específico:
@@ -59,6 +60,18 @@ python -m app.scripts.crear_usuario \
   --password Fedetec123! \
   --nombre "Admin Fedetec Test" \
   --rol ADMIN
+```
+
+Crear una empresa cliente con login:
+
+```bash
+python -m app.scripts.crear_usuario \
+  --empresa \
+  --correo empresa@fedetec.dev \
+  --password Fedetec123! \
+  --nombre "Empresa Fedetec Test" \
+  --telefono "+57 301 000 0000" \
+  --identificacion-tributaria 900000001
 ```
 
 Si ejecutas el backend con Docker:
