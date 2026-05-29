@@ -10,7 +10,11 @@ from app.repositorios.notificacion_servicio import (
     NotificacionServicioConUbicacion,
     NotificacionServicioRepositorio,
 )
-from app.repositorios.servicio import ServicioDetalleTecnico, ServicioRepositorio
+from app.repositorios.servicio import (
+    ServicioDetalleTecnico,
+    ServicioListaTecnico,
+    ServicioRepositorio,
+)
 from app.repositorios.tecnico import TecnicoConUbicacion, TecnicoRepositorio
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
@@ -18,6 +22,8 @@ from app.schemas.tecnico import (
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
     ServicioDetalleTecnicoLeer,
+    ServicioListaTecnicoItemLeer,
+    ServicioListaTecnicoLeer,
     TecnicoActualizar,
     TecnicoCercanoLeer,
     TecnicoLeer,
@@ -151,6 +157,30 @@ class TecnicoServicio:
 
         return self._serializar_detalle_servicio(detalle)
 
+    async def listar_servicios_tecnico(
+        self,
+        tecnico: Tecnico,
+        estado: str | None = None,
+        fecha_desde: datetime | None = None,
+        fecha_hasta: datetime | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> ServicioListaTecnicoLeer:
+        servicios, total = await self.servicios.listar_para_tecnico(
+            tecnico.id,
+            estado=estado,
+            fecha_desde=fecha_desde,
+            fecha_hasta=fecha_hasta,
+            limit=limit,
+            offset=offset,
+        )
+        return ServicioListaTecnicoLeer(
+            items=[self._serializar_item_servicio_tecnico(servicio) for servicio in servicios],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
+
     async def obtener_metricas_rendimiento(
         self, tecnico_id: UUID
     ) -> MetricasRendimientoTecnicoLeer | None:
@@ -253,3 +283,30 @@ class TecnicoServicio:
             2: "Diagnostico",
             3: "Soporte vial",
         }.get(tipo_servicio, f"Tipo {tipo_servicio}")
+
+    @classmethod
+    def _serializar_item_servicio_tecnico(
+        cls, item: ServicioListaTecnico
+    ) -> ServicioListaTecnicoItemLeer:
+        servicio = item.servicio
+        return ServicioListaTecnicoItemLeer(
+            id=servicio.id,
+            codigo=cls._codigo_servicio(servicio.id),
+            tipo_servicio=servicio.tipo_servicio,
+            tipo_servicio_nombre=cls._nombre_tipo_servicio(servicio.tipo_servicio),
+            placa_vehiculo=servicio.placa_vehiculo,
+            direccion=servicio.direccion,
+            ciudad=cls._extraer_ciudad(servicio.direccion),
+            estado=servicio.estado,
+            fecha_programada=servicio.fecha_programada,
+            fecha_finalizacion=servicio.fecha_finalizacion,
+            distancia_metros=item.distancia_metros,
+            calificacion=item.calificacion,
+        )
+
+    @staticmethod
+    def _extraer_ciudad(direccion: str | None) -> str | None:
+        if not direccion:
+            return None
+        partes = [parte.strip() for parte in direccion.split(",") if parte.strip()]
+        return partes[-1] if len(partes) > 1 else None

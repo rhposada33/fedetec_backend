@@ -92,3 +92,25 @@ class ServicioDetalleTecnicoLeer(BaseModel):
     direccion: str | None = None
     fecha_programada: datetime
     distancia_metros: float | None = None
+
+
+class ServicioListaTecnicoItemLeer(BaseModel):
+    id: UUID
+    codigo: str
+    tipo_servicio: int
+    tipo_servicio_nombre: str
+    placa_vehiculo: str | None = None
+    direccion: str | None = None
+    ciudad: str | None = None
+    estado: str
+    fecha_programada: datetime
+    fecha_finalizacion: datetime | None = None
+    distancia_metros: float | None = None
+    calificacion: int | None = None
+
+
+class ServicioListaTecnicoLeer(BaseModel):
+    items: list[ServicioListaTecnicoItemLeer]
+    total: int
+    limit: int
+    offset: int

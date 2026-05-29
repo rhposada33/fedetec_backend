@@ -1,3 +1,4 @@
+from datetime import UTC, date, datetime, time
 from typing import Annotated
 from uuid import UUID
 
@@ -10,6 +11,7 @@ from app.schemas.tecnico import (
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
     ServicioDetalleTecnicoLeer,
+    ServicioListaTecnicoLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
@@ -58,6 +60,32 @@ async def listar_notificaciones_tecnico_actual(
     session: SesionDep, tecnico_actual: TecnicoActualDep
 ) -> list[NotificacionServicioTecnicoLeer]:
     return await TecnicoServicio(session).listar_notificaciones(tecnico_actual)
+
+
+@router.get("/yo/servicios", response_model=ServicioListaTecnicoLeer)
+async def listar_servicios_tecnico_actual(
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+    estado: str | None = None,
+    fecha_desde: date | None = None,
+    fecha_hasta: date | None = None,
+    limit: Annotated[int, Query(gt=0, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> ServicioListaTecnicoLeer:
+    fecha_desde_dt = (
+        datetime.combine(fecha_desde, time.min, tzinfo=UTC) if fecha_desde else None
+    )
+    fecha_hasta_dt = (
+        datetime.combine(fecha_hasta, time.max, tzinfo=UTC) if fecha_hasta else None
+    )
+    return await TecnicoServicio(session).listar_servicios_tecnico(
+        tecnico_actual,
+        estado=estado,
+        fecha_desde=fecha_desde_dt,
+        fecha_hasta=fecha_hasta_dt,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get("/yo/servicios/{servicio_id}", response_model=ServicioDetalleTecnicoLeer)

@@ -3,11 +3,12 @@ from typing import NamedTuple
 from uuid import UUID
 
 from geoalchemy2 import Geometry
-from sqlalchemy import Select, cast, exists, func, select
+from sqlalchemy import Select, cast, exists, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modelos.calificacion_servicio import CalificacionServicio
 from app.modelos.notificacion_servicio import NotificacionServicio
 from app.modelos.servicio import Servicio
 from app.modelos.tecnico import Tecnico
@@ -25,6 +26,14 @@ class ServicioDetalleTecnico(NamedTuple):
     longitud: float
     distancia_metros: float | None
     notificado: bool
+
+
+class ServicioListaTecnico(NamedTuple):
+    servicio: Servicio
+    latitud: float
+    longitud: float
+    distancia_metros: float | None
+    calificacion: int | None
 
 
 class ServicioRepositorio:
@@ -116,6 +125,42 @@ class ServicioRepositorio:
         row = (await self.session.execute(stmt)).one_or_none()
         return ServicioDetalleTecnico(*row) if row else None
 
+    async def listar_para_tecnico(
+        self,
+        tecnico_id: UUID,
+        estado: str | None = None,
+        fecha_desde: datetime | None = None,
+        fecha_hasta: datetime | None = None,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> tuple[list[ServicioListaTecnico], int]:
+        ubicacion_geometry = cast(Servicio.ubicacion, Geometry)
+        distancia = func.ST_Distance(Servicio.ubicacion, Tecnico.ubicacion_actual)
+        filtros = self._filtros_servicio_tecnico(
+            tecnico_id, estado, fecha_desde, fecha_hasta
+        )
+
+        stmt = (
+            select(
+                Servicio,
+                func.ST_Y(ubicacion_geometry).label("latitud"),
+                func.ST_X(ubicacion_geometry).label("longitud"),
+                distancia.label("distancia_metros"),
+                CalificacionServicio.puntuacion.label("calificacion"),
+            )
+            .join(Tecnico, Tecnico.id == tecnico_id)
+            .outerjoin(Servicio.calificacion)
+            .where(*filtros)
+            .order_by(Servicio.fecha_programada.desc(), Servicio.fecha_creacion.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        total_stmt = select(func.count(Servicio.id)).where(*filtros)
+
+        rows = (await self.session.execute(stmt)).all()
+        total = await self.session.scalar(total_stmt)
+        return [ServicioListaTecnico(*row) for row in rows], int(total or 0)
+
     async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> Servicio | None:
         stmt = select(Servicio).where(Servicio.id == servicio_id).with_for_update()
         return await self.session.scalar(stmt)
@@ -189,6 +234,32 @@ class ServicioRepositorio:
             func.ST_Y(ubicacion_geometry).label("latitud"),
             func.ST_X(ubicacion_geometry).label("longitud"),
         )
+
+    @staticmethod
+    def _filtros_servicio_tecnico(
+        tecnico_id: UUID,
+        estado: str | None,
+        fecha_desde: datetime | None,
+        fecha_hasta: datetime | None,
+    ):
+        notificado = exists(
+            select(NotificacionServicio.id)
+            .where(NotificacionServicio.servicio_id == Servicio.id)
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+        )
+        filtros = [
+            or_(
+                notificado,
+                Servicio.tecnico_aceptado_id == tecnico_id,
+            )
+        ]
+        if estado is not None:
+            filtros.append(Servicio.estado == estado)
+        if fecha_desde is not None:
+            filtros.append(Servicio.fecha_programada >= fecha_desde)
+        if fecha_hasta is not None:
+            filtros.append(Servicio.fecha_programada <= fecha_hasta)
+        return filtros
 
     @staticmethod
     def _select_historial():

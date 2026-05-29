@@ -12,7 +12,7 @@ os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:5432/fedetec"
 
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
-from app.repositorios.servicio import ServicioDetalleTecnico
+from app.repositorios.servicio import ServicioDetalleTecnico, ServicioListaTecnico
 from app.repositorios.tecnico import (
     MetricasRendimientoTecnico,
     TecnicoConUbicacion,
@@ -437,6 +437,111 @@ async def test_detalle_servicio_tecnico_retorna_none_si_no_existe(
     respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
 
     assert respuesta is None
+
+
+@pytest.mark.asyncio
+async def test_listar_servicios_tecnico_devuelve_items_paginados(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio(estado="VALIDADO")
+    servicio.direccion = "Cra 45 #12-30, Cali"
+    servicio.fecha_finalizacion = FECHA
+
+    class RepositorioFake:
+        parametros: dict[str, object] = {}
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def listar_para_tecnico(
+            self,
+            tecnico_id: UUID,
+            estado: str | None = None,
+            fecha_desde: datetime | None = None,
+            fecha_hasta: datetime | None = None,
+            limit: int = 20,
+            offset: int = 0,
+        ) -> tuple[list[ServicioListaTecnico], int]:
+            self.__class__.parametros = {
+                "tecnico_id": tecnico_id,
+                "estado": estado,
+                "fecha_desde": fecha_desde,
+                "fecha_hasta": fecha_hasta,
+                "limit": limit,
+                "offset": offset,
+            }
+            return [
+                ServicioListaTecnico(
+                    servicio=servicio,
+                    latitud=3.4516,
+                    longitud=-76.532,
+                    distancia_metros=1200.0,
+                    calificacion=5,
+                )
+            ], 1
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).listar_servicios_tecnico(
+        tecnico,
+        estado="VALIDADO",
+        fecha_desde=FECHA,
+        fecha_hasta=FECHA,
+        limit=10,
+        offset=20,
+    )
+
+    assert respuesta.total == 1
+    assert respuesta.limit == 10
+    assert respuesta.offset == 20
+    assert respuesta.items[0].id == SERVICIO_ID
+    assert respuesta.items[0].codigo == "SV-66666666"
+    assert respuesta.items[0].estado == "VALIDADO"
+    assert respuesta.items[0].ciudad == "Cali"
+    assert respuesta.items[0].calificacion == 5
+    assert RepositorioFake.parametros["tecnico_id"] == TECNICO_ID
+    assert RepositorioFake.parametros["estado"] == "VALIDADO"
+
+
+@pytest.mark.asyncio
+async def test_listar_servicios_tecnico_sql_filtra_estado_fecha_y_usuario() -> None:
+    class ResultadoFake:
+        def all(self) -> list[object]:
+            return []
+
+    class SessionFake:
+        statement = None
+
+        async def execute(self, statement: object) -> ResultadoFake:
+            self.__class__.statement = statement
+            return ResultadoFake()
+
+        async def scalar(self, statement: object) -> int:
+            return 0
+
+    await tecnico_modulo.ServicioRepositorio(SessionFake()).listar_para_tecnico(
+        TECNICO_ID,
+        estado="VALIDADO",
+        fecha_desde=FECHA,
+        fecha_hasta=FECHA,
+        limit=10,
+        offset=20,
+    )
+
+    sql = str(
+        SessionFake.statement.compile(
+            dialect=postgresql.dialect(), compile_kwargs={"literal_binds": False}
+        )
+    )
+
+    assert "notificaciones_servicio.tecnico_id" in sql
+    assert "servicios.tecnico_aceptado_id = " in sql
+    assert "servicios.estado = " in sql
+    assert "servicios.fecha_programada >= " in sql
+    assert "servicios.fecha_programada <= " in sql
+    assert "LIMIT" in sql
+    assert "OFFSET" in sql
 
 
 @pytest.mark.asyncio
