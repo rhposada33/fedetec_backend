@@ -16,6 +16,7 @@ from app.repositorios.tecnico import TecnicoRepositorio
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
+    ServicioActualizar,
     ServicioCrear,
     ServicioLeer,
     ServicioPublicadoLeer,
@@ -87,6 +88,44 @@ class ServicioServicio:
             servicio_id, empresa_cliente.id
         )
         return self._construir_historial(servicio) if servicio is not None else None
+
+    async def actualizar(
+        self,
+        servicio_id: UUID,
+        servicio_in: ServicioActualizar,
+        empresa_cliente: EmpresaCliente | None = None,
+    ) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        if servicio.estado in {"FINALIZADO", "VALIDADO", "PAGO_GENERADO", "CANCELADO"}:
+            raise ValueError("El servicio ya no permite edicion")
+
+        datos = servicio_in.model_dump(exclude_unset=True)
+        if "empresa_cliente_id" in datos:
+            if empresa_cliente is None:
+                raise ValueError("Empresa cliente no encontrada")
+            servicio.empresa_cliente_id = empresa_cliente.id
+        if "tipo_servicio" in datos:
+            servicio.tipo_servicio = servicio_in.tipo_servicio
+        if "placa_vehiculo" in datos:
+            servicio.placa_vehiculo = servicio_in.placa_vehiculo
+        if "direccion" in datos:
+            servicio.direccion = servicio_in.direccion
+        if "fecha_programada" in datos:
+            servicio.fecha_programada = servicio_in.fecha_programada
+        if "latitud" in datos or "longitud" in datos:
+            if servicio_in.latitud is None or servicio_in.longitud is None:
+                raise ValueError("latitud y longitud son requeridas para actualizar ubicacion")
+            servicio.ubicacion = WKTElement(
+                f"POINT({servicio_in.longitud} {servicio_in.latitud})", srid=4326
+            )
+
+        await self.session.commit()
+        actualizado = await self.servicios.obtener_por_id(servicio_id)
+        if actualizado is None:
+            raise RuntimeError("No fue posible recuperar el servicio actualizado")
+        return self._serializar(actualizado)
 
     async def publicar(
         self, servicio_id: UUID, radio_metros: int = 10_000

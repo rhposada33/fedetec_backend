@@ -22,6 +22,7 @@ from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
+    ServicioActualizar,
     ServicioCrear,
     ServicioLeer,
     ServicioPublicadoLeer,
@@ -112,6 +113,44 @@ async def obtener_historial_servicio(
             detail="Servicio no encontrado",
         )
     return historial
+
+
+@router.patch("/{servicio_id}", response_model=ServicioLeer)
+async def actualizar_servicio(
+    servicio_id: UUID,
+    servicio_in: ServicioActualizar,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> ServicioLeer:
+    empresa_cliente = None
+    if servicio_in.empresa_cliente_id is not None:
+        empresa_cliente = await EmpresaClienteRepositorio(session).obtener_por_id(
+            servicio_in.empresa_cliente_id
+        )
+        if empresa_cliente is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Empresa cliente no encontrada",
+            )
+        if not empresa_cliente.esta_activa:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="La empresa cliente no esta activa",
+            )
+
+    try:
+        servicio = await ServicioServicio(session).actualizar(
+            servicio_id, servicio_in, empresa_cliente
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
 
 
 @router.post(

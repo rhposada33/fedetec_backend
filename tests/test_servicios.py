@@ -386,6 +386,79 @@ async def test_historial_servicio_empresa_usa_servicio_de_su_empresa(
     assert ServicioRepositorioFake.consulta == (SERVICIO_ID, EMPRESA_ID)
 
 
+@pytest.mark.asyncio
+async def test_actualizar_servicio_admin_edita_campos_operativos(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="CREADO")
+    empresa = SimpleNamespace(id=UUID("77777777-7777-7777-7777-777777777777"))
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        ubicacion_guardada: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            self.__class__.ubicacion_guardada = servicio.ubicacion.desc
+            return ServicioConUbicacion(servicio, 4.72, -74.08)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    respuesta = await ServicioServicio(SessionFake()).actualizar(
+        SERVICIO_ID,
+        servicio_modulo.ServicioActualizar(
+            empresa_cliente_id=empresa.id,
+            tipo_servicio=2,
+            placa_vehiculo="XYZ987",
+            latitud=4.72,
+            longitud=-74.08,
+            direccion="Nueva direccion",
+            fecha_programada=FECHA,
+        ),
+        empresa,
+    )
+
+    assert respuesta is not None
+    assert respuesta.empresa_cliente_id == empresa.id
+    assert respuesta.tipo_servicio == 2
+    assert respuesta.placa_vehiculo == "XYZ987"
+    assert respuesta.direccion == "Nueva direccion"
+    assert ServicioRepositorioFake.ubicacion_guardada == "POINT(-74.08 4.72)"
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_actualizar_servicio_rechaza_terminal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="PAGO_GENERADO")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="no permite edicion"):
+        await ServicioServicio(SimpleNamespace()).actualizar(
+            SERVICIO_ID,
+            servicio_modulo.ServicioActualizar(placa_vehiculo="XYZ987"),
+        )
+
+
 def test_notificaciones_servicio_usa_on_conflict_para_evitar_duplicados() -> None:
     class ResultadoFake:
         rowcount = 0

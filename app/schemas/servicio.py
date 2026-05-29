@@ -15,6 +15,16 @@ class ServicioCrear(BaseModel):
     fecha_programada: datetime
 
 
+class ServicioActualizar(BaseModel):
+    empresa_cliente_id: UUID | None = None
+    tipo_servicio: Literal[1, 2, 3] | None = None
+    placa_vehiculo: str | None = Field(default=None, max_length=30)
+    latitud: float | None = Field(default=None, ge=-90, le=90)
+    longitud: float | None = Field(default=None, ge=-180, le=180)
+    direccion: str | None = None
+    fecha_programada: datetime | None = None
+
+
 class ServicioLeer(BaseModel):
     id: UUID
     empresa_cliente_id: UUID
