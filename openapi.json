@@ -1,0 +1,5876 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Fedetec API",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/salud": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Salud",
+        "operationId": "salud_salud_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Salud Salud Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "salud"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Obtener Dashboard",
+        "operationId": "obtener_dashboard_api_v1_admin_dashboard_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "empresa_cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Empresa Cliente Id"
+            }
+          },
+          {
+            "name": "tecnico_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tecnico Id"
+            }
+          },
+          {
+            "name": "fecha_desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Desde"
+            }
+          },
+          {
+            "name": "fecha_hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/servicios": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Listar Servicios Admin",
+        "operationId": "listar_servicios_admin_api_v1_admin_servicios_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "empresa_cliente_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Empresa Cliente Id"
+            }
+          },
+          {
+            "name": "tecnico_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tecnico Id"
+            }
+          },
+          {
+            "name": "fecha_desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Desde"
+            }
+          },
+          {
+            "name": "fecha_hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Hasta"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServicioLeer"
+                  },
+                  "title": "Response Listar Servicios Admin Api V1 Admin Servicios Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tecnicos": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Listar Tecnicos Admin",
+        "operationId": "listar_tecnicos_admin_api_v1_admin_tecnicos_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "esta_disponible",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Esta Disponible"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TecnicoLeer"
+                  },
+                  "title": "Response Listar Tecnicos Admin Api V1 Admin Tecnicos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tecnicos/{tecnico_id}/metricas": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Obtener Metricas Tecnico Admin",
+        "operationId": "obtener_metricas_tecnico_admin_api_v1_admin_tecnicos__tecnico_id__metricas_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tecnico_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tecnico Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasRendimientoTecnicoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/tecnicos/{tecnico_id}": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Actualizar Tecnico Admin",
+        "operationId": "actualizar_tecnico_admin_api_v1_admin_tecnicos__tecnico_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "tecnico_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tecnico Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TecnicoActualizar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TecnicoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas-cliente": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Listar Empresas Cliente Admin",
+        "operationId": "listar_empresas_cliente_admin_api_v1_admin_empresas_cliente_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "esta_activa",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Esta Activa"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaClienteLeer"
+                  },
+                  "title": "Response Listar Empresas Cliente Admin Api V1 Admin Empresas Cliente Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/evidencias/pendientes": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Listar Evidencias Pendientes Admin",
+        "operationId": "listar_evidencias_pendientes_admin_api_v1_admin_evidencias_pendientes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaServicioLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Evidencias Pendientes Admin Api V1 Admin Evidencias Pendientes Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/configuracion": {
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Actualizar Configuracion Admin",
+        "operationId": "actualizar_configuracion_admin_api_v1_admin_configuracion_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfiguracionActualizar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/autenticacion/registro": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Registrar Usuario",
+        "operationId": "registrar_usuario_api_v1_autenticacion_registro_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsuarioCrear"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/autenticacion/registro/tecnico": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Registrar Tecnico",
+        "operationId": "registrar_tecnico_api_v1_autenticacion_registro_tecnico_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TecnicoRegistrar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAutenticadoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/autenticacion/login": {
+      "post": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Iniciar Sesion",
+        "operationId": "iniciar_sesion_api_v1_autenticacion_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_iniciar_sesion_api_v1_autenticacion_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/autenticacion/yo": {
+      "get": {
+        "tags": [
+          "autenticacion"
+        ],
+        "summary": "Leer Usuario Autenticado",
+        "operationId": "leer_usuario_autenticado_api_v1_autenticacion_yo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAutenticadoLeer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/usuarios/me": {
+      "get": {
+        "tags": [
+          "usuarios"
+        ],
+        "summary": "Leer Usuario Actual",
+        "operationId": "leer_usuario_actual_api_v1_usuarios_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioLeer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sedes": {
+      "get": {
+        "tags": [
+          "sedes"
+        ],
+        "summary": "Listar Sedes",
+        "operationId": "listar_sedes_api_v1_sedes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SedeLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Sedes Api V1 Sedes Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "sedes"
+        ],
+        "summary": "Crear Sede",
+        "operationId": "crear_sede_api_v1_sedes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SedeCrear"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SedeLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/empresas-cliente": {
+      "get": {
+        "tags": [
+          "empresas-cliente"
+        ],
+        "summary": "Listar Empresas Cliente",
+        "operationId": "listar_empresas_cliente_api_v1_empresas_cliente_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaClienteLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Empresas Cliente Api V1 Empresas Cliente Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "empresas-cliente"
+        ],
+        "summary": "Crear Empresa Cliente",
+        "operationId": "crear_empresa_cliente_api_v1_empresas_cliente_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpresaClienteCrear"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaClienteCreada"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/empresas-cliente/{empresa_id}": {
+      "get": {
+        "tags": [
+          "empresas-cliente"
+        ],
+        "summary": "Obtener Empresa Cliente",
+        "operationId": "obtener_empresa_cliente_api_v1_empresas_cliente__empresa_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "empresa_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Empresa Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaClienteLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "empresas-cliente"
+        ],
+        "summary": "Actualizar Empresa Cliente",
+        "operationId": "actualizar_empresa_cliente_api_v1_empresas_cliente__empresa_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "empresa_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Empresa Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmpresaClienteActualizar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaClienteLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Crear Servicio",
+        "operationId": "crear_servicio_api_v1_servicios_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 150
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Listar Servicios",
+        "operationId": "listar_servicios_api_v1_servicios_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ServicioLeer"
+                  },
+                  "title": "Response Listar Servicios Api V1 Servicios Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}": {
+      "get": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Obtener Servicio",
+        "operationId": "obtener_servicio_api_v1_servicios__servicio_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Actualizar Servicio",
+        "operationId": "actualizar_servicio_api_v1_servicios__servicio_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioActualizar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/historial": {
+      "get": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Obtener Historial Servicio",
+        "operationId": "obtener_historial_servicio_api_v1_servicios__servicio_id__historial_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HistorialServicioEventoLeer"
+                  },
+                  "title": "Response Obtener Historial Servicio Api V1 Servicios  Servicio Id  Historial Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/calificaciones": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Crear Calificacion Servicio",
+        "operationId": "crear_calificacion_servicio_api_v1_servicios__servicio_id__calificaciones_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalificacionServicioCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Obtener Calificacion Servicio",
+        "operationId": "obtener_calificacion_servicio_api_v1_servicios__servicio_id__calificaciones_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/publicar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Publicar Servicio",
+        "operationId": "publicar_servicio_api_v1_servicios__servicio_id__publicar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          },
+          {
+            "name": "radio_metros",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "exclusiveMinimum": 0,
+              "default": 10000,
+              "title": "Radio Metros"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioPublicadoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/aceptar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Aceptar Servicio",
+        "operationId": "aceptar_servicio_api_v1_servicios__servicio_id__aceptar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/rechazar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Rechazar Servicio",
+        "operationId": "rechazar_servicio_api_v1_servicios__servicio_id__rechazar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioRechazar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioRechazadoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/reprogramar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Reprogramar Servicio",
+        "operationId": "reprogramar_servicio_api_v1_servicios__servicio_id__reprogramar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioReprogramar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReprogramacionServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/iniciar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Iniciar Servicio",
+        "operationId": "iniciar_servicio_api_v1_servicios__servicio_id__iniciar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/finalizar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Finalizar Servicio",
+        "operationId": "finalizar_servicio_api_v1_servicios__servicio_id__finalizar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/validar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Validar Servicio",
+        "operationId": "validar_servicio_api_v1_servicios__servicio_id__validar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/reasignar": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Reasignar Servicio",
+        "operationId": "reasignar_servicio_api_v1_servicios__servicio_id__reasignar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServicioReasignar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/evidencias": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Crear Evidencia Servicio",
+        "operationId": "crear_evidencia_servicio_api_v1_servicios__servicio_id__evidencias_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenciaServicioCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenciaServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Listar Evidencias Servicio",
+        "operationId": "listar_evidencias_servicio_api_v1_servicios__servicio_id__evidencias_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaServicioLeer"
+                  },
+                  "title": "Response Listar Evidencias Servicio Api V1 Servicios  Servicio Id  Evidencias Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/evidencias/upload-url": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Crear Upload Url Evidencia Servicio",
+        "operationId": "crear_upload_url_evidencia_servicio_api_v1_servicios__servicio_id__evidencias_upload_url_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenciaUploadUrlSolicitar"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenciaUploadUrlLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/servicios/{servicio_id}/reporte-pago": {
+      "post": {
+        "tags": [
+          "servicios"
+        ],
+        "summary": "Crear Reporte Pago Servicio",
+        "operationId": "crear_reporte_pago_servicio_api_v1_servicios__servicio_id__reporte_pago_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportePagoCrear"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportePagoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evidencias/{evidencia_id}/aprobar": {
+      "post": {
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "Aprobar Evidencia",
+        "operationId": "aprobar_evidencia_api_v1_evidencias__evidencia_id__aprobar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evidencia_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Evidencia Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenciaServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/evidencias/{evidencia_id}/rechazar": {
+      "post": {
+        "tags": [
+          "evidencias"
+        ],
+        "summary": "Rechazar Evidencia",
+        "operationId": "rechazar_evidencia_api_v1_evidencias__evidencia_id__rechazar_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evidencia_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Evidencia Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenciaServicioLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reportes-pago": {
+      "get": {
+        "tags": [
+          "reportes-pago"
+        ],
+        "summary": "Listar Reportes Pago",
+        "operationId": "listar_reportes_pago_api_v1_reportes_pago_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportePagoLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Reportes Pago Api V1 Reportes Pago Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reportes-pago/{reporte_id}": {
+      "get": {
+        "tags": [
+          "reportes-pago"
+        ],
+        "summary": "Obtener Reporte Pago",
+        "operationId": "obtener_reporte_pago_api_v1_reportes_pago__reporte_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "reporte_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Reporte Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportePagoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tecnicos/yo": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Obtener Tecnico Actual",
+        "operationId": "obtener_tecnico_actual_api_v1_tecnicos_yo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TecnicoLeer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/ubicacion": {
+      "patch": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Actualizar Ubicacion Tecnico Actual",
+        "operationId": "actualizar_ubicacion_tecnico_actual_api_v1_tecnicos_yo_ubicacion_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UbicacionTecnicoActualizar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TecnicoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/disponibilidad": {
+      "patch": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Actualizar Disponibilidad Tecnico Actual",
+        "operationId": "actualizar_disponibilidad_tecnico_actual_api_v1_tecnicos_yo_disponibilidad_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisponibilidadTecnicoActualizar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TecnicoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/servicios-disponibles": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Listar Servicios Disponibles Tecnico Actual",
+        "operationId": "listar_servicios_disponibles_tecnico_actual_api_v1_tecnicos_yo_servicios_disponibles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ServicioLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Servicios Disponibles Tecnico Actual Api V1 Tecnicos Yo Servicios Disponibles Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/notificaciones": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Listar Notificaciones Tecnico Actual",
+        "operationId": "listar_notificaciones_tecnico_actual_api_v1_tecnicos_yo_notificaciones_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificacionServicioTecnicoLeer"
+                  },
+                  "type": "array",
+                  "title": "Response Listar Notificaciones Tecnico Actual Api V1 Tecnicos Yo Notificaciones Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/servicios": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Listar Servicios Tecnico Actual",
+        "operationId": "listar_servicios_tecnico_actual_api_v1_tecnicos_yo_servicios_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Estado"
+            }
+          },
+          {
+            "name": "fecha_desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Desde"
+            }
+          },
+          {
+            "name": "fecha_hasta",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fecha Hasta"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "exclusiveMinimum": 0,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioListaTecnicoLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tecnicos/yo/servicios/{servicio_id}": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Obtener Detalle Servicio Tecnico Actual",
+        "operationId": "obtener_detalle_servicio_tecnico_actual_api_v1_tecnicos_yo_servicios__servicio_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "servicio_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServicioTecnicoDetalleLeer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tecnicos/yo/metricas": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Obtener Metricas Tecnico Actual",
+        "operationId": "obtener_metricas_tecnico_actual_api_v1_tecnicos_yo_metricas_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricasRendimientoTecnicoLeer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/yo/ranking": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Obtener Ranking Tecnico Actual",
+        "operationId": "obtener_ranking_tecnico_actual_api_v1_tecnicos_yo_ranking_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingTecnicoLeer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/tecnicos/cercanos": {
+      "get": {
+        "tags": [
+          "tecnicos"
+        ],
+        "summary": "Listar Tecnicos Cercanos",
+        "operationId": "listar_tecnicos_cercanos_api_v1_tecnicos_cercanos_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "latitud",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 90,
+              "minimum": -90,
+              "title": "Latitud"
+            }
+          },
+          {
+            "name": "longitud",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "number",
+              "maximum": 180,
+              "minimum": -180,
+              "title": "Longitud"
+            }
+          },
+          {
+            "name": "radio_metros",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "exclusiveMinimum": 0,
+              "default": 10000,
+              "title": "Radio Metros"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TecnicoCercanoLeer"
+                  },
+                  "title": "Response Listar Tecnicos Cercanos Api V1 Tecnicos Cercanos Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_iniciar_sesion_api_v1_autenticacion_login_post": {
+        "properties": {
+          "grant_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^password$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grant Type"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password"
+          },
+          "scope": {
+            "type": "string",
+            "title": "Scope",
+            "default": ""
+          },
+          "client_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Client Id"
+          },
+          "client_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "format": "password",
+            "title": "Client Secret"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Body_iniciar_sesion_api_v1_autenticacion_login_post"
+      },
+      "CalificacionServicioCrear": {
+        "properties": {
+          "puntuacion": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Puntuacion"
+          },
+          "comentario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comentario"
+          }
+        },
+        "type": "object",
+        "required": [
+          "puntuacion"
+        ],
+        "title": "CalificacionServicioCrear"
+      },
+      "CalificacionServicioLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "empresa_cliente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Empresa Cliente Id"
+          },
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "puntuacion": {
+            "type": "integer",
+            "title": "Puntuacion"
+          },
+          "comentario": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comentario"
+          },
+          "fecha_calificacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Calificacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "servicio_id",
+          "empresa_cliente_id",
+          "tecnico_id",
+          "puntuacion",
+          "fecha_calificacion",
+          "fecha_creacion"
+        ],
+        "title": "CalificacionServicioLeer"
+      },
+      "ConfiguracionActualizar": {
+        "properties": {
+          "aprobacion_evidencias": {
+            "$ref": "#/components/schemas/ConfiguracionAprobacionEvidenciasLeer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aprobacion_evidencias"
+        ],
+        "title": "ConfiguracionActualizar"
+      },
+      "ConfiguracionAprobacionEvidenciasLeer": {
+        "properties": {
+          "modo": {
+            "type": "string",
+            "enum": [
+              "AUTO",
+              "MANUAL"
+            ],
+            "title": "Modo",
+            "default": "MANUAL"
+          },
+          "roles_permitidos": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles Permitidos"
+          }
+        },
+        "type": "object",
+        "title": "ConfiguracionAprobacionEvidenciasLeer"
+      },
+      "ConfiguracionLeer": {
+        "properties": {
+          "aprobacion_evidencias": {
+            "$ref": "#/components/schemas/ConfiguracionAprobacionEvidenciasLeer"
+          },
+          "fecha_actualizacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Actualizacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "aprobacion_evidencias"
+        ],
+        "title": "ConfiguracionLeer"
+      },
+      "DashboardEstadoMetrica": {
+        "properties": {
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estado",
+          "total"
+        ],
+        "title": "DashboardEstadoMetrica"
+      },
+      "DashboardLeer": {
+        "properties": {
+          "total_servicios": {
+            "type": "integer",
+            "title": "Total Servicios"
+          },
+          "servicios_por_estado": {
+            "items": {
+              "$ref": "#/components/schemas/DashboardEstadoMetrica"
+            },
+            "type": "array",
+            "title": "Servicios Por Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_servicios",
+          "servicios_por_estado"
+        ],
+        "title": "DashboardLeer"
+      },
+      "DisponibilidadTecnicoActualizar": {
+        "properties": {
+          "esta_disponible": {
+            "type": "boolean",
+            "title": "Esta Disponible"
+          }
+        },
+        "type": "object",
+        "required": [
+          "esta_disponible"
+        ],
+        "title": "DisponibilidadTecnicoActualizar"
+      },
+      "EmpresaClienteActualizar": {
+        "properties": {
+          "nombre": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre"
+          },
+          "identificacion_tributaria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Tributaria"
+          },
+          "correo_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Contacto"
+          },
+          "telefono_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono Contacto"
+          },
+          "esta_activa": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Esta Activa"
+          }
+        },
+        "type": "object",
+        "title": "EmpresaClienteActualizar"
+      },
+      "EmpresaClienteCreada": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "identificacion_tributaria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Tributaria"
+          },
+          "correo_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Contacto"
+          },
+          "telefono_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono Contacto"
+          },
+          "esta_activa": {
+            "type": "boolean",
+            "title": "Esta Activa",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usuario Id"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "id",
+          "fecha_creacion"
+        ],
+        "title": "EmpresaClienteCreada"
+      },
+      "EmpresaClienteCrear": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "identificacion_tributaria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Tributaria"
+          },
+          "correo_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Contacto"
+          },
+          "telefono_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono Contacto"
+          },
+          "esta_activa": {
+            "type": "boolean",
+            "title": "Esta Activa",
+            "default": true
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "password"
+        ],
+        "title": "EmpresaClienteCrear"
+      },
+      "EmpresaClienteLeer": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "identificacion_tributaria": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identificacion Tributaria"
+          },
+          "correo_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo Contacto"
+          },
+          "telefono_contacto": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono Contacto"
+          },
+          "esta_activa": {
+            "type": "boolean",
+            "title": "Esta Activa",
+            "default": true
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usuario Id"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre",
+          "id",
+          "fecha_creacion"
+        ],
+        "title": "EmpresaClienteLeer"
+      },
+      "EvidenciaServicioCrear": {
+        "properties": {
+          "url_archivo": {
+            "type": "string",
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url Archivo"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "tipo_archivo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Archivo"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url_archivo"
+        ],
+        "title": "EvidenciaServicioCrear"
+      },
+      "EvidenciaServicioLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "subido_por_usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subido Por Usuario Id"
+          },
+          "url_archivo": {
+            "type": "string",
+            "title": "Url Archivo"
+          },
+          "storage_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Storage Key"
+          },
+          "tipo_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Archivo"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado_aprobacion": {
+            "type": "string",
+            "title": "Estado Aprobacion"
+          },
+          "aprobado_por_usuario_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aprobado Por Usuario Id"
+          },
+          "fecha_aprobacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Aprobacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "servicio_id",
+          "subido_por_usuario_id",
+          "url_archivo",
+          "estado_aprobacion",
+          "fecha_creacion"
+        ],
+        "title": "EvidenciaServicioLeer"
+      },
+      "EvidenciaServicioTecnicoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "url_archivo": {
+            "type": "string",
+            "title": "Url Archivo"
+          },
+          "tipo_archivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Archivo"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "estado_aprobacion": {
+            "type": "string",
+            "title": "Estado Aprobacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "url_archivo",
+          "estado_aprobacion",
+          "fecha_creacion"
+        ],
+        "title": "EvidenciaServicioTecnicoLeer"
+      },
+      "EvidenciaUploadUrlLeer": {
+        "properties": {
+          "upload_url": {
+            "type": "string",
+            "title": "Upload Url"
+          },
+          "public_url": {
+            "type": "string",
+            "title": "Public Url"
+          },
+          "storage_key": {
+            "type": "string",
+            "title": "Storage Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_url",
+          "public_url",
+          "storage_key"
+        ],
+        "title": "EvidenciaUploadUrlLeer"
+      },
+      "EvidenciaUploadUrlSolicitar": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Content Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_type"
+        ],
+        "title": "EvidenciaUploadUrlSolicitar"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistorialServicioEventoLeer": {
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha"
+          },
+          "tipo_evento": {
+            "type": "string",
+            "title": "Tipo Evento"
+          },
+          "titulo": {
+            "type": "string",
+            "title": "Titulo"
+          },
+          "descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Descripcion"
+          },
+          "entidad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entidad"
+          },
+          "entidad_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entidad Id"
+          },
+          "datos": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Datos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fecha",
+          "tipo_evento",
+          "titulo"
+        ],
+        "title": "HistorialServicioEventoLeer"
+      },
+      "MetricasRendimientoTecnicoLeer": {
+        "properties": {
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "calificacion_promedio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calificacion Promedio"
+          },
+          "servicios_completados": {
+            "type": "integer",
+            "title": "Servicios Completados"
+          },
+          "servicios_aceptados": {
+            "type": "integer",
+            "title": "Servicios Aceptados"
+          },
+          "servicios_rechazados": {
+            "type": "integer",
+            "title": "Servicios Rechazados"
+          },
+          "porcentaje_cumplimiento": {
+            "type": "integer",
+            "title": "Porcentaje Cumplimiento"
+          },
+          "ranking_posicion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ranking Posicion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tecnico_id",
+          "servicios_completados",
+          "servicios_aceptados",
+          "servicios_rechazados",
+          "porcentaje_cumplimiento"
+        ],
+        "title": "MetricasRendimientoTecnicoLeer"
+      },
+      "NotificacionServicioTecnicoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "fecha_envio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Envio"
+          },
+          "fecha_lectura": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Lectura"
+          },
+          "servicio": {
+            "$ref": "#/components/schemas/ServicioLeer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "servicio_id",
+          "tecnico_id",
+          "estado",
+          "fecha_envio",
+          "servicio"
+        ],
+        "title": "NotificacionServicioTecnicoLeer"
+      },
+      "RankingTecnicoLeer": {
+        "properties": {
+          "posicion": {
+            "type": "integer",
+            "title": "Posicion"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "puntos": {
+            "type": "integer",
+            "title": "Puntos"
+          },
+          "puntos_siguiente": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Puntos Siguiente"
+          },
+          "puntos_faltantes": {
+            "type": "integer",
+            "title": "Puntos Faltantes"
+          },
+          "percentil": {
+            "type": "integer",
+            "title": "Percentil"
+          }
+        },
+        "type": "object",
+        "required": [
+          "posicion",
+          "region",
+          "puntos",
+          "puntos_faltantes",
+          "percentil"
+        ],
+        "title": "RankingTecnicoLeer"
+      },
+      "ReportePagoCrear": {
+        "properties": {
+          "valor": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          }
+        },
+        "type": "object",
+        "title": "ReportePagoCrear"
+      },
+      "ReportePagoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "empresa_cliente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Empresa Cliente Id"
+          },
+          "valor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valor"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "fecha_generacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Generacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "servicio_id",
+          "tecnico_id",
+          "empresa_cliente_id",
+          "estado",
+          "fecha_generacion"
+        ],
+        "title": "ReportePagoLeer"
+      },
+      "ReprogramacionServicioLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "fecha_propuesta": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Propuesta"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "servicio_id",
+          "tecnico_id",
+          "fecha_propuesta",
+          "estado",
+          "fecha_creacion"
+        ],
+        "title": "ReprogramacionServicioLeer"
+      },
+      "SedeCrear": {
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "latitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitud"
+          },
+          "longitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitud"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nombre"
+        ],
+        "title": "SedeCrear"
+      },
+      "SedeLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "creado_en": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Creado En"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "direccion",
+          "creado_en"
+        ],
+        "title": "SedeLeer"
+      },
+      "ServicioActualizar": {
+        "properties": {
+          "empresa_cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa Cliente Id"
+          },
+          "tipo_servicio": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "enum": [
+                  1,
+                  2,
+                  3
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tipo Servicio"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "latitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitud"
+          },
+          "longitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "fecha_programada": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Programada"
+          }
+        },
+        "type": "object",
+        "title": "ServicioActualizar"
+      },
+      "ServicioCrear": {
+        "properties": {
+          "empresa_cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa Cliente Id"
+          },
+          "tipo_servicio": {
+            "type": "integer",
+            "enum": [
+              1,
+              2,
+              3
+            ],
+            "title": "Tipo Servicio"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "latitud": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Programada"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tipo_servicio",
+          "latitud",
+          "longitud",
+          "fecha_programada"
+        ],
+        "title": "ServicioCrear"
+      },
+      "ServicioLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "empresa_cliente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Empresa Cliente Id"
+          },
+          "tipo_servicio": {
+            "type": "integer",
+            "title": "Tipo Servicio"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "latitud": {
+            "type": "number",
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Programada"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "clave_idempotencia": {
+            "type": "string",
+            "title": "Clave Idempotencia"
+          },
+          "tecnico_aceptado_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tecnico Aceptado Id"
+          },
+          "fecha_aceptacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Aceptacion"
+          },
+          "fecha_inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Inicio"
+          },
+          "fecha_finalizacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Finalizacion"
+          },
+          "fecha_validacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Validacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          },
+          "fecha_actualizacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Actualizacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "empresa_cliente_id",
+          "tipo_servicio",
+          "latitud",
+          "longitud",
+          "fecha_programada",
+          "estado",
+          "clave_idempotencia",
+          "fecha_creacion",
+          "fecha_actualizacion"
+        ],
+        "title": "ServicioLeer"
+      },
+      "ServicioListaTecnicoLeer": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ServicioTecnicoResumenLeer"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ServicioListaTecnicoLeer"
+      },
+      "ServicioPublicadoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "empresa_cliente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Empresa Cliente Id"
+          },
+          "tipo_servicio": {
+            "type": "integer",
+            "title": "Tipo Servicio"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "latitud": {
+            "type": "number",
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Programada"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "clave_idempotencia": {
+            "type": "string",
+            "title": "Clave Idempotencia"
+          },
+          "tecnico_aceptado_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tecnico Aceptado Id"
+          },
+          "fecha_aceptacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Aceptacion"
+          },
+          "fecha_inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Inicio"
+          },
+          "fecha_finalizacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Finalizacion"
+          },
+          "fecha_validacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Validacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          },
+          "fecha_actualizacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Actualizacion"
+          },
+          "notificaciones_creadas": {
+            "type": "integer",
+            "title": "Notificaciones Creadas"
+          },
+          "tecnicos_cercanos": {
+            "type": "integer",
+            "title": "Tecnicos Cercanos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "empresa_cliente_id",
+          "tipo_servicio",
+          "latitud",
+          "longitud",
+          "fecha_programada",
+          "estado",
+          "clave_idempotencia",
+          "fecha_creacion",
+          "fecha_actualizacion",
+          "notificaciones_creadas",
+          "tecnicos_cercanos"
+        ],
+        "title": "ServicioPublicadoLeer"
+      },
+      "ServicioReasignar": {
+        "properties": {
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "tecnico_id"
+        ],
+        "title": "ServicioReasignar"
+      },
+      "ServicioRechazadoLeer": {
+        "properties": {
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "tecnico_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Tecnico Id"
+          },
+          "rechazo_creado": {
+            "type": "boolean",
+            "title": "Rechazo Creado"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "servicio_id",
+          "tecnico_id",
+          "rechazo_creado",
+          "estado"
+        ],
+        "title": "ServicioRechazadoLeer"
+      },
+      "ServicioRechazar": {
+        "properties": {
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "title": "ServicioRechazar"
+      },
+      "ServicioReprogramar": {
+        "properties": {
+          "fecha_propuesta": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Propuesta"
+          },
+          "motivo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Motivo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fecha_propuesta"
+        ],
+        "title": "ServicioReprogramar"
+      },
+      "ServicioTecnicoDetalleLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "tipo_servicio": {
+            "type": "integer",
+            "title": "Tipo Servicio"
+          },
+          "tipo_servicio_nombre": {
+            "type": "string",
+            "title": "Tipo Servicio Nombre"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "vehiculo_descripcion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vehiculo Descripcion"
+          },
+          "empresa_cliente_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Empresa Cliente Id"
+          },
+          "empresa_cliente_nombre": {
+            "type": "string",
+            "title": "Empresa Cliente Nombre"
+          },
+          "latitud": {
+            "type": "number",
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Programada"
+          },
+          "fecha_aceptacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Aceptacion"
+          },
+          "fecha_inicio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Inicio"
+          },
+          "fecha_finalizacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Finalizacion"
+          },
+          "distancia_metros": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancia Metros"
+          },
+          "tecnico_aceptado_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tecnico Aceptado Id"
+          },
+          "evidencias": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvidenciaServicioTecnicoLeer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidencias"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "codigo",
+          "tipo_servicio",
+          "tipo_servicio_nombre",
+          "estado",
+          "empresa_cliente_id",
+          "empresa_cliente_nombre",
+          "latitud",
+          "longitud",
+          "fecha_programada"
+        ],
+        "title": "ServicioTecnicoDetalleLeer"
+      },
+      "ServicioTecnicoResumenLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "tipo_servicio": {
+            "type": "integer",
+            "title": "Tipo Servicio"
+          },
+          "tipo_servicio_nombre": {
+            "type": "string",
+            "title": "Tipo Servicio Nombre"
+          },
+          "estado": {
+            "type": "string",
+            "title": "Estado"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "latitud": {
+            "type": "number",
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "title": "Longitud"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "fecha_programada": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Programada"
+          },
+          "distancia_metros": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distancia Metros"
+          },
+          "calificacion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calificacion"
+          },
+          "badge_estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Estado"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "codigo",
+          "tipo_servicio",
+          "tipo_servicio_nombre",
+          "estado",
+          "latitud",
+          "longitud",
+          "fecha_programada"
+        ],
+        "title": "ServicioTecnicoResumenLeer"
+      },
+      "TecnicoActualizar": {
+        "properties": {
+          "nombre_completo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre Completo"
+          },
+          "correo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 150
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiene Vehiculo"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "esta_activo": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Esta Activo"
+          },
+          "esta_disponible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Esta Disponible"
+          },
+          "latitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitud"
+          },
+          "longitud": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitud"
+          }
+        },
+        "type": "object",
+        "title": "TecnicoActualizar"
+      },
+      "TecnicoCercanoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "title": "Nombre Completo"
+          },
+          "correo": {
+            "type": "string",
+            "title": "Correo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "type": "boolean",
+            "title": "Tiene Vehiculo"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "esta_activo": {
+            "type": "boolean",
+            "title": "Esta Activo"
+          },
+          "esta_disponible": {
+            "type": "boolean",
+            "title": "Esta Disponible"
+          },
+          "latitud": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitud"
+          },
+          "longitud": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitud"
+          },
+          "fecha_ultima_ubicacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Ultima Ubicacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          },
+          "distancia_metros": {
+            "type": "number",
+            "title": "Distancia Metros"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "nombre_completo",
+          "correo",
+          "tiene_vehiculo",
+          "esta_activo",
+          "esta_disponible",
+          "fecha_creacion",
+          "distancia_metros"
+        ],
+        "title": "TecnicoCercanoLeer"
+      },
+      "TecnicoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "usuario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Usuario Id"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "title": "Nombre Completo"
+          },
+          "correo": {
+            "type": "string",
+            "title": "Correo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "type": "boolean",
+            "title": "Tiene Vehiculo"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "esta_activo": {
+            "type": "boolean",
+            "title": "Esta Activo"
+          },
+          "esta_disponible": {
+            "type": "boolean",
+            "title": "Esta Disponible"
+          },
+          "latitud": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitud"
+          },
+          "longitud": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitud"
+          },
+          "fecha_ultima_ubicacion": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fecha Ultima Ubicacion"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "usuario_id",
+          "nombre_completo",
+          "correo",
+          "tiene_vehiculo",
+          "esta_activo",
+          "esta_disponible",
+          "fecha_creacion"
+        ],
+        "title": "TecnicoLeer"
+      },
+      "TecnicoRegistrar": {
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "contrasena": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Contrasena"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre Completo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "type": "boolean",
+            "title": "Tiene Vehiculo",
+            "default": false
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "correo",
+          "contrasena",
+          "nombre_completo"
+        ],
+        "title": "TecnicoRegistrar"
+      },
+      "Token": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "Token"
+      },
+      "UbicacionTecnicoActualizar": {
+        "properties": {
+          "latitud": {
+            "type": "number",
+            "maximum": 90.0,
+            "minimum": -90.0,
+            "title": "Latitud"
+          },
+          "longitud": {
+            "type": "number",
+            "maximum": 180.0,
+            "minimum": -180.0,
+            "title": "Longitud"
+          }
+        },
+        "type": "object",
+        "required": [
+          "latitud",
+          "longitud"
+        ],
+        "title": "UbicacionTecnicoActualizar"
+      },
+      "UsuarioAutenticadoLeer": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "tecnico_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tecnico Id"
+          },
+          "empresa_cliente_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Empresa Cliente Id"
+          },
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "title": "Nombre Completo"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "type": "boolean",
+            "title": "Tiene Vehiculo"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "esta_activo": {
+            "type": "boolean",
+            "title": "Esta Activo"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "correo",
+          "nombre_completo",
+          "tiene_vehiculo",
+          "esta_activo",
+          "fecha_creacion"
+        ],
+        "title": "UsuarioAutenticadoLeer"
+      },
+      "UsuarioCrear": {
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre Completo"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 8,
+            "title": "Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "correo",
+          "nombre_completo",
+          "password"
+        ],
+        "title": "UsuarioCrear"
+      },
+      "UsuarioLeer": {
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "title": "Correo"
+          },
+          "nombre_completo": {
+            "type": "string",
+            "maxLength": 150,
+            "minLength": 1,
+            "title": "Nombre Completo"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "telefono": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono"
+          },
+          "numero_documento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numero Documento"
+          },
+          "ciudad": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ciudad"
+          },
+          "municipio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Municipio"
+          },
+          "direccion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direccion"
+          },
+          "eps": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eps"
+          },
+          "arl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Arl"
+          },
+          "tiene_vehiculo": {
+            "type": "boolean",
+            "title": "Tiene Vehiculo"
+          },
+          "placa_vehiculo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placa Vehiculo"
+          },
+          "esta_activo": {
+            "type": "boolean",
+            "title": "Esta Activo"
+          },
+          "fecha_creacion": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Fecha Creacion"
+          }
+        },
+        "type": "object",
+        "required": [
+          "correo",
+          "nombre_completo",
+          "id",
+          "tiene_vehiculo",
+          "esta_activo",
+          "fecha_creacion"
+        ],
+        "title": "UsuarioLeer"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    },
+    "securitySchemes": {
+      "OAuth2PasswordBearer": {
+        "type": "oauth2",
+        "flows": {
+          "password": {
+            "scopes": {},
+            "tokenUrl": "/api/v1/autenticacion/login"
+          }
+        }
+      }
+    }
+  }
+}
