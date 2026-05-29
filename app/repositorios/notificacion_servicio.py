@@ -5,6 +5,7 @@ from geoalchemy2 import Geometry
 from sqlalchemy import cast, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import contains_eager
 
 from app.modelos.notificacion_servicio import NotificacionServicio
 from app.modelos.servicio import Servicio
@@ -95,4 +96,5 @@ class NotificacionServicioRepositorio:
                 func.ST_X(ubicacion_geometry).label("longitud"),
             )
             .join(NotificacionServicio.servicio)
+            .options(contains_eager(NotificacionServicio.servicio))
         )
