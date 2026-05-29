@@ -118,6 +118,7 @@ class ServicioRepositorio:
                 distancia.label("distancia_metros"),
                 notificado.label("notificado"),
             )
+            .select_from(Servicio)
             .join(Tecnico, Tecnico.id == tecnico_id)
             .options(selectinload(Servicio.empresa_cliente))
             .where(Servicio.id == servicio_id)
@@ -148,6 +149,7 @@ class ServicioRepositorio:
                 distancia.label("distancia_metros"),
                 CalificacionServicio.puntuacion.label("calificacion"),
             )
+            .select_from(Servicio)
             .join(Tecnico, Tecnico.id == tecnico_id)
             .outerjoin(Servicio.calificacion)
             .where(*filtros)
