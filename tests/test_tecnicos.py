@@ -27,6 +27,8 @@ from app.servicios import tecnico as tecnico_modulo
 from app.servicios.tecnico import TecnicoServicio
 
 TECNICO_ID = UUID("44444444-4444-4444-4444-444444444444")
+TECNICO_SUPERIOR_ID = UUID("44444444-4444-4444-4444-444444444445")
+TECNICO_OTRA_REGION_ID = UUID("44444444-4444-4444-4444-444444444446")
 USUARIO_ID = UUID("55555555-5555-5555-5555-555555555555")
 SERVICIO_ID = UUID("66666666-6666-6666-6666-666666666666")
 EMPRESA_ID = UUID("77777777-7777-7777-7777-777777777777")
@@ -34,16 +36,20 @@ NOTIFICACION_ID = UUID("88888888-8888-8888-8888-888888888888")
 FECHA = datetime(2026, 5, 28, tzinfo=UTC)
 
 
-def crear_tecnico(esta_disponible: bool = True) -> SimpleNamespace:
+def crear_tecnico(
+    esta_disponible: bool = True,
+    tecnico_id: UUID = TECNICO_ID,
+    ciudad: str | None = None,
+) -> SimpleNamespace:
     return SimpleNamespace(
-        id=TECNICO_ID,
+        id=tecnico_id,
         usuario_id=USUARIO_ID,
         usuario=SimpleNamespace(
             nombre_completo="Tecnico Demo",
             correo="tecnico@example.com",
             telefono="3001234567",
             numero_documento=None,
-            ciudad=None,
+            ciudad=ciudad,
             municipio=None,
             direccion=None,
             eps=None,
@@ -643,26 +649,47 @@ async def test_listar_servicios_tecnico_sql_filtra_estado_fecha_y_usuario() -> N
 async def test_metricas_rendimiento_tecnico_serializa_agregados(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    tecnico = crear_tecnico()
+    tecnico = crear_tecnico(ciudad="Valle")
+    tecnico_superior = crear_tecnico(tecnico_id=TECNICO_SUPERIOR_ID, ciudad="Valle")
+    tecnico_otra_region = crear_tecnico(
+        tecnico_id=TECNICO_OTRA_REGION_ID, ciudad="Antioquia"
+    )
 
     class RepositorioFake:
         def __init__(self, session: object) -> None:
             self.session = session
 
-        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion | None:
-            assert tecnico_id == TECNICO_ID
-            return TecnicoConUbicacion(tecnico, None, None)
+        async def listar_admin(self) -> list[TecnicoConUbicacion]:
+            return [
+                TecnicoConUbicacion(tecnico_superior, None, None),
+                TecnicoConUbicacion(tecnico, None, None),
+                TecnicoConUbicacion(tecnico_otra_region, None, None),
+            ]
 
         async def obtener_metricas_rendimiento(
             self, tecnico_id: UUID
         ) -> MetricasRendimientoTecnico:
-            assert tecnico_id == TECNICO_ID
-            return MetricasRendimientoTecnico(
-                calificacion_promedio=4.5,
-                servicios_completados=3,
-                servicios_aceptados=5,
-                servicios_rechazados=2,
-            )
+            metricas = {
+                TECNICO_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=4.5,
+                    servicios_completados=3,
+                    servicios_aceptados=5,
+                    servicios_rechazados=2,
+                ),
+                TECNICO_SUPERIOR_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=5.0,
+                    servicios_completados=10,
+                    servicios_aceptados=10,
+                    servicios_rechazados=0,
+                ),
+                TECNICO_OTRA_REGION_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=5.0,
+                    servicios_completados=20,
+                    servicios_aceptados=20,
+                    servicios_rechazados=0,
+                ),
+            }
+            return metricas[tecnico_id]
 
     monkeypatch.setattr(tecnico_modulo, "TecnicoRepositorio", RepositorioFake)
 
@@ -674,6 +701,67 @@ async def test_metricas_rendimiento_tecnico_serializa_agregados(
     assert respuesta.servicios_completados == 3
     assert respuesta.servicios_aceptados == 5
     assert respuesta.servicios_rechazados == 2
+    assert respuesta.porcentaje_cumplimiento == 60
+    assert respuesta.ranking_posicion == 2
+
+
+@pytest.mark.asyncio
+async def test_ranking_tecnico_ordena_por_puntos_y_region(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico(ciudad="Valle")
+    tecnico_superior = crear_tecnico(tecnico_id=TECNICO_SUPERIOR_ID, ciudad="Valle")
+    tecnico_otra_region = crear_tecnico(
+        tecnico_id=TECNICO_OTRA_REGION_ID, ciudad="Antioquia"
+    )
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def listar_admin(self) -> list[TecnicoConUbicacion]:
+            return [
+                TecnicoConUbicacion(tecnico, None, None),
+                TecnicoConUbicacion(tecnico_superior, None, None),
+                TecnicoConUbicacion(tecnico_otra_region, None, None),
+            ]
+
+        async def obtener_metricas_rendimiento(
+            self, tecnico_id: UUID
+        ) -> MetricasRendimientoTecnico:
+            metricas = {
+                TECNICO_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=4.5,
+                    servicios_completados=3,
+                    servicios_aceptados=5,
+                    servicios_rechazados=2,
+                ),
+                TECNICO_SUPERIOR_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=5.0,
+                    servicios_completados=10,
+                    servicios_aceptados=10,
+                    servicios_rechazados=0,
+                ),
+                TECNICO_OTRA_REGION_ID: MetricasRendimientoTecnico(
+                    calificacion_promedio=1.0,
+                    servicios_completados=1,
+                    servicios_aceptados=1,
+                    servicios_rechazados=9,
+                ),
+            }
+            return metricas[tecnico_id]
+
+    monkeypatch.setattr(tecnico_modulo, "TecnicoRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_ranking_actual(tecnico)
+
+    assert respuesta is not None
+    assert respuesta.region == "Valle"
+    assert respuesta.posicion == 2
+    assert respuesta.puntos == 683
+    assert respuesta.puntos_siguiente == 900
+    assert respuesta.puntos_faltantes == 217
+    assert respuesta.percentil == 50
 
 
 @pytest.mark.asyncio

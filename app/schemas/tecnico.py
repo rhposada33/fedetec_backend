@@ -65,6 +65,17 @@ class MetricasRendimientoTecnicoLeer(BaseModel):
     servicios_completados: int
     servicios_aceptados: int
     servicios_rechazados: int
+    porcentaje_cumplimiento: int
+    ranking_posicion: int | None = None
+
+
+class RankingTecnicoLeer(BaseModel):
+    posicion: int
+    region: str
+    puntos: int
+    puntos_siguiente: int | None = None
+    puntos_faltantes: int
+    percentil: int
 
 
 class NotificacionServicioTecnicoLeer(BaseModel):

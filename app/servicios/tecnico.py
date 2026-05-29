@@ -22,6 +22,7 @@ from app.schemas.tecnico import (
     EvidenciaServicioTecnicoLeer,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
+    RankingTecnicoLeer,
     ServicioListaTecnicoLeer,
     ServicioTecnicoDetalleLeer,
     ServicioTecnicoResumenLeer,
@@ -29,6 +30,11 @@ from app.schemas.tecnico import (
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
+)
+from app.servicios.ranking_tecnico import (
+    EntradaRankingTecnico,
+    calcular_porcentaje_cumplimiento,
+    ordenar_ranking,
 )
 
 
@@ -185,16 +191,42 @@ class TecnicoServicio:
     async def obtener_metricas_rendimiento(
         self, tecnico_id: UUID
     ) -> MetricasRendimientoTecnicoLeer | None:
-        tecnico = await self.tecnicos.obtener_por_id(tecnico_id)
-        if tecnico is None:
+        ranking = await self._calcular_ranking(tecnico_id)
+        if ranking is None:
             return None
-        metricas = await self.tecnicos.obtener_metricas_rendimiento(tecnico_id)
+        entrada, posicion, _puntos, _ranking_regional = ranking
         return MetricasRendimientoTecnicoLeer(
             tecnico_id=tecnico_id,
-            calificacion_promedio=metricas.calificacion_promedio,
-            servicios_completados=metricas.servicios_completados,
-            servicios_aceptados=metricas.servicios_aceptados,
-            servicios_rechazados=metricas.servicios_rechazados,
+            calificacion_promedio=entrada.calificacion_promedio,
+            servicios_completados=entrada.servicios_completados,
+            servicios_aceptados=entrada.servicios_aceptados,
+            servicios_rechazados=entrada.servicios_rechazados,
+            porcentaje_cumplimiento=calcular_porcentaje_cumplimiento(
+                entrada.servicios_completados,
+                entrada.servicios_aceptados,
+            ),
+            ranking_posicion=posicion,
+        )
+
+    async def obtener_ranking_actual(self, tecnico: Tecnico) -> RankingTecnicoLeer | None:
+        ranking = await self._calcular_ranking(tecnico.id)
+        if ranking is None:
+            return None
+
+        entrada, posicion, puntos, ranking_regional = ranking
+        puntos_siguiente = ranking_regional[posicion - 2][1] if posicion > 1 else None
+        puntos_faltantes = (
+            max((puntos_siguiente or puntos) - puntos, 0) if puntos_siguiente is not None else 0
+        )
+        total = len(ranking_regional)
+        percentil = round(((total - posicion + 1) / total) * 100) if total else 0
+        return RankingTecnicoLeer(
+            posicion=posicion,
+            region=entrada.region,
+            puntos=puntos,
+            puntos_siguiente=puntos_siguiente,
+            puntos_faltantes=puntos_faltantes,
+            percentil=percentil,
         )
 
     @staticmethod
@@ -344,3 +376,41 @@ class TecnicoServicio:
         if len(partes) < 2:
             return None
         return partes[-2] if len(partes) > 2 else partes[-1]
+
+    async def _calcular_ranking(
+        self, tecnico_id: UUID
+    ) -> tuple[EntradaRankingTecnico, int, int, list[tuple[EntradaRankingTecnico, int]]] | None:
+        tecnicos = await self.tecnicos.listar_admin()
+        entradas = []
+        for tecnico_con_ubicacion in tecnicos:
+            tecnico = tecnico_con_ubicacion.tecnico
+            metricas = await self.tecnicos.obtener_metricas_rendimiento(tecnico.id)
+            entradas.append(
+                EntradaRankingTecnico(
+                    tecnico_id=tecnico.id,
+                    region=self._region_tecnico(tecnico),
+                    calificacion_promedio=metricas.calificacion_promedio,
+                    servicios_completados=metricas.servicios_completados,
+                    servicios_aceptados=metricas.servicios_aceptados,
+                    servicios_rechazados=metricas.servicios_rechazados,
+                )
+            )
+
+        entrada_actual = next(
+            (entrada for entrada in entradas if entrada.tecnico_id == tecnico_id),
+            None,
+        )
+        if entrada_actual is None:
+            return None
+
+        ranking_regional = ordenar_ranking(
+            [entrada for entrada in entradas if entrada.region == entrada_actual.region]
+        )
+        for indice, (entrada, puntos) in enumerate(ranking_regional, start=1):
+            if entrada.tecnico_id == tecnico_id:
+                return entrada, indice, puntos, ranking_regional
+        return None
+
+    @staticmethod
+    def _region_tecnico(tecnico: Tecnico) -> str:
+        return tecnico.usuario.ciudad or tecnico.usuario.municipio or "Sin region"

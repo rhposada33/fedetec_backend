@@ -10,6 +10,7 @@ from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
+    RankingTecnicoLeer,
     ServicioListaTecnicoLeer,
     ServicioTecnicoDetalleLeer,
     TecnicoCercanoLeer,
@@ -117,6 +118,16 @@ async def obtener_metricas_tecnico_actual(
     if metricas is None:
         raise RuntimeError("No fue posible recuperar las metricas del tecnico actual")
     return metricas
+
+
+@router.get("/yo/ranking", response_model=RankingTecnicoLeer)
+async def obtener_ranking_tecnico_actual(
+    session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> RankingTecnicoLeer:
+    ranking = await TecnicoServicio(session).obtener_ranking_actual(tecnico_actual)
+    if ranking is None:
+        raise RuntimeError("No fue posible recuperar el ranking del tecnico actual")
+    return ranking
 
 
 @router.get("/cercanos", response_model=list[TecnicoCercanoLeer])
