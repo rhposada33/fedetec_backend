@@ -19,11 +19,12 @@ from app.repositorios.tecnico import TecnicoConUbicacion, TecnicoRepositorio
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
+    EvidenciaServicioTecnicoLeer,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
-    ServicioDetalleTecnicoLeer,
-    ServicioListaTecnicoItemLeer,
     ServicioListaTecnicoLeer,
+    ServicioTecnicoDetalleLeer,
+    ServicioTecnicoResumenLeer,
     TecnicoActualizar,
     TecnicoCercanoLeer,
     TecnicoLeer,
@@ -146,7 +147,7 @@ class TecnicoServicio:
 
     async def obtener_detalle_servicio(
         self, tecnico: Tecnico, servicio_id: UUID
-    ) -> ServicioDetalleTecnicoLeer | None:
+    ) -> ServicioTecnicoDetalleLeer | None:
         detalle = await self.servicios.obtener_detalle_para_tecnico(servicio_id, tecnico.id)
         if detalle is None:
             return None
@@ -248,28 +249,40 @@ class TecnicoServicio:
     @classmethod
     def _serializar_detalle_servicio(
         cls, detalle: ServicioDetalleTecnico
-    ) -> ServicioDetalleTecnicoLeer:
+    ) -> ServicioTecnicoDetalleLeer:
         servicio = detalle.servicio
         empresa = servicio.empresa_cliente
-        return ServicioDetalleTecnicoLeer(
+        return ServicioTecnicoDetalleLeer(
             id=servicio.id,
             codigo=cls._codigo_servicio(servicio.id),
             tipo_servicio=servicio.tipo_servicio,
             tipo_servicio_nombre=cls._nombre_tipo_servicio(servicio.tipo_servicio),
             estado=servicio.estado,
             placa_vehiculo=servicio.placa_vehiculo,
-            vehiculo_descripcion=(
-                f"Vehiculo placa {servicio.placa_vehiculo}"
-                if servicio.placa_vehiculo
-                else None
-            ),
+            vehiculo_descripcion=cls._vehiculo_descripcion(servicio.placa_vehiculo),
             empresa_cliente_id=servicio.empresa_cliente_id,
-            empresa_cliente_nombre=empresa.nombre,
+            empresa_cliente_nombre=empresa.nombre if empresa else "",
             latitud=detalle.latitud,
             longitud=detalle.longitud,
             direccion=servicio.direccion,
+            ciudad=cls._extraer_ciudad(servicio.direccion),
             fecha_programada=servicio.fecha_programada,
+            fecha_aceptacion=servicio.fecha_aceptacion,
+            fecha_inicio=servicio.fecha_inicio,
+            fecha_finalizacion=servicio.fecha_finalizacion,
+            tecnico_aceptado_id=servicio.tecnico_aceptado_id,
             distancia_metros=detalle.distancia_metros,
+            evidencias=[
+                EvidenciaServicioTecnicoLeer(
+                    id=evidencia.id,
+                    url_archivo=evidencia.url_archivo,
+                    tipo_archivo=evidencia.tipo_archivo,
+                    descripcion=evidencia.descripcion,
+                    estado_aprobacion=evidencia.estado_aprobacion,
+                    fecha_creacion=evidencia.fecha_creacion,
+                )
+                for evidencia in getattr(servicio, "evidencias", [])
+            ],
         )
 
     @staticmethod
@@ -284,24 +297,43 @@ class TecnicoServicio:
             3: "Soporte vial",
         }.get(tipo_servicio, f"Tipo {tipo_servicio}")
 
+    @staticmethod
+    def _vehiculo_descripcion(placa_vehiculo: str | None) -> str | None:
+        return f"Vehiculo placa {placa_vehiculo}" if placa_vehiculo else None
+
+    @staticmethod
+    def _badge_estado(estado: str) -> str:
+        return {
+            "CREADO": "neutral",
+            "DISPONIBLE": "info",
+            "ACEPTADO": "primary",
+            "EN_PROCESO": "warning",
+            "FINALIZADO": "success",
+            "VALIDADO": "success",
+            "PAGO_GENERADO": "success",
+            "RECHAZADO": "danger",
+            "REPROGRAMACION_SOLICITADA": "warning",
+            "CANCELADO": "danger",
+        }.get(estado, "neutral")
+
     @classmethod
     def _serializar_item_servicio_tecnico(
         cls, item: ServicioListaTecnico
-    ) -> ServicioListaTecnicoItemLeer:
+    ) -> ServicioTecnicoResumenLeer:
         servicio = item.servicio
-        return ServicioListaTecnicoItemLeer(
+        return ServicioTecnicoResumenLeer(
             id=servicio.id,
             codigo=cls._codigo_servicio(servicio.id),
             tipo_servicio=servicio.tipo_servicio,
             tipo_servicio_nombre=cls._nombre_tipo_servicio(servicio.tipo_servicio),
+            estado=servicio.estado,
             placa_vehiculo=servicio.placa_vehiculo,
             direccion=servicio.direccion,
             ciudad=cls._extraer_ciudad(servicio.direccion),
-            estado=servicio.estado,
             fecha_programada=servicio.fecha_programada,
-            fecha_finalizacion=servicio.fecha_finalizacion,
             distancia_metros=item.distancia_metros,
             calificacion=item.calificacion,
+            badge_estado=cls._badge_estado(servicio.estado),
         )
 
     @staticmethod
@@ -309,4 +341,6 @@ class TecnicoServicio:
         if not direccion:
             return None
         partes = [parte.strip() for parte in direccion.split(",") if parte.strip()]
-        return partes[-1] if len(partes) > 1 else None
+        if len(partes) < 2:
+            return None
+        return partes[-2] if len(partes) > 2 else partes[-1]

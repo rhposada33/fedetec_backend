@@ -76,6 +76,7 @@ def crear_servicio(estado: str = "DISPONIBLE") -> SimpleNamespace:
         fecha_finalizacion=None,
         fecha_creacion=FECHA,
         fecha_actualizacion=FECHA,
+        evidencias=[],
     )
 
 
@@ -352,9 +353,102 @@ async def test_detalle_servicio_tecnico_permite_servicio_notificado(
     assert respuesta.codigo == "SV-66666666"
     assert respuesta.tipo_servicio_nombre == "Mantenimiento"
     assert respuesta.empresa_cliente_nombre == "Transportes del Valle S.A.S."
+    assert respuesta.vehiculo_descripcion == "Vehiculo placa ABC123"
+    assert respuesta.ciudad is None
     assert respuesta.latitud == 3.4516
     assert respuesta.longitud == -76.532
     assert respuesta.distancia_metros == 1200.0
+    assert respuesta.tecnico_aceptado_id is None
+    assert respuesta.evidencias == []
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_serializa_dto_movil_con_evidencias(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio(estado="FINALIZADO")
+    servicio.direccion = "Cra 45 #12-30, Cali, Valle"
+    servicio.tecnico_aceptado_id = TECNICO_ID
+    servicio.fecha_aceptacion = FECHA
+    servicio.fecha_inicio = FECHA
+    servicio.fecha_finalizacion = FECHA
+    servicio.evidencias = [
+        SimpleNamespace(
+            id=UUID("99999999-9999-9999-9999-999999999999"),
+            url_archivo="https://example.com/evidencia.jpg",
+            tipo_archivo="image/jpeg",
+            descripcion=None,
+            estado_aprobacion="PENDIENTE",
+            fecha_creacion=FECHA,
+        )
+    ]
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> ServicioDetalleTecnico:
+            return ServicioDetalleTecnico(
+                servicio=servicio,
+                latitud=3.4516,
+                longitud=-76.532,
+                distancia_metros=1200.0,
+                notificado=True,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+    assert respuesta is not None
+    assert respuesta.ciudad == "Cali"
+    assert respuesta.fecha_aceptacion == FECHA
+    assert respuesta.fecha_inicio == FECHA
+    assert respuesta.fecha_finalizacion == FECHA
+    assert respuesta.tecnico_aceptado_id == TECNICO_ID
+    assert respuesta.evidencias is not None
+    assert respuesta.evidencias[0].url_archivo == "https://example.com/evidencia.jpg"
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_mapea_campos_nulos_sin_fallar(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio()
+    servicio.empresa_cliente = None
+    servicio.placa_vehiculo = None
+    servicio.direccion = None
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> ServicioDetalleTecnico:
+            return ServicioDetalleTecnico(
+                servicio=servicio,
+                latitud=3.4516,
+                longitud=-76.532,
+                distancia_metros=None,
+                notificado=True,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+    assert respuesta is not None
+    assert respuesta.empresa_cliente_nombre == ""
+    assert respuesta.placa_vehiculo is None
+    assert respuesta.vehiculo_descripcion is None
+    assert respuesta.direccion is None
+    assert respuesta.ciudad is None
+    assert respuesta.distancia_metros is None
 
 
 @pytest.mark.asyncio
@@ -500,6 +594,7 @@ async def test_listar_servicios_tecnico_devuelve_items_paginados(
     assert respuesta.items[0].estado == "VALIDADO"
     assert respuesta.items[0].ciudad == "Cali"
     assert respuesta.items[0].calificacion == 5
+    assert respuesta.items[0].badge_estado == "success"
     assert RepositorioFake.parametros["tecnico_id"] == TECNICO_ID
     assert RepositorioFake.parametros["estado"] == "VALIDADO"
 

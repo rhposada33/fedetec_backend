@@ -10,8 +10,8 @@ from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
-    ServicioDetalleTecnicoLeer,
     ServicioListaTecnicoLeer,
+    ServicioTecnicoDetalleLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
@@ -88,12 +88,12 @@ async def listar_servicios_tecnico_actual(
     )
 
 
-@router.get("/yo/servicios/{servicio_id}", response_model=ServicioDetalleTecnicoLeer)
+@router.get("/yo/servicios/{servicio_id}", response_model=ServicioTecnicoDetalleLeer)
 async def obtener_detalle_servicio_tecnico_actual(
     servicio_id: UUID,
     session: SesionDep,
     tecnico_actual: TecnicoActualDep,
-) -> ServicioDetalleTecnicoLeer:
+) -> ServicioTecnicoDetalleLeer:
     try:
         servicio = await TecnicoServicio(session).obtener_detalle_servicio(
             tecnico_actual, servicio_id

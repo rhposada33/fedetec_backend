@@ -120,7 +120,10 @@ class ServicioRepositorio:
             )
             .select_from(Servicio)
             .join(Tecnico, Tecnico.id == tecnico_id)
-            .options(selectinload(Servicio.empresa_cliente))
+            .options(
+                selectinload(Servicio.empresa_cliente),
+                selectinload(Servicio.evidencias),
+            )
             .where(Servicio.id == servicio_id)
         )
         row = (await self.session.execute(stmt)).one_or_none()

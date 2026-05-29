@@ -77,7 +77,31 @@ class NotificacionServicioTecnicoLeer(BaseModel):
     servicio: ServicioLeer
 
 
-class ServicioDetalleTecnicoLeer(BaseModel):
+class EvidenciaServicioTecnicoLeer(BaseModel):
+    id: UUID
+    url_archivo: str
+    tipo_archivo: str | None = None
+    descripcion: str | None = None
+    estado_aprobacion: str
+    fecha_creacion: datetime
+
+
+class ServicioTecnicoResumenLeer(BaseModel):
+    id: UUID
+    codigo: str
+    tipo_servicio: int
+    tipo_servicio_nombre: str
+    estado: str
+    placa_vehiculo: str | None = None
+    direccion: str | None = None
+    ciudad: str | None = None
+    fecha_programada: datetime
+    distancia_metros: float | None = None
+    calificacion: int | None = None
+    badge_estado: str | None = None
+
+
+class ServicioTecnicoDetalleLeer(BaseModel):
     id: UUID
     codigo: str
     tipo_servicio: int
@@ -90,27 +114,26 @@ class ServicioDetalleTecnicoLeer(BaseModel):
     latitud: float
     longitud: float
     direccion: str | None = None
-    fecha_programada: datetime
-    distancia_metros: float | None = None
-
-
-class ServicioListaTecnicoItemLeer(BaseModel):
-    id: UUID
-    codigo: str
-    tipo_servicio: int
-    tipo_servicio_nombre: str
-    placa_vehiculo: str | None = None
-    direccion: str | None = None
     ciudad: str | None = None
-    estado: str
     fecha_programada: datetime
+    fecha_aceptacion: datetime | None = None
+    fecha_inicio: datetime | None = None
     fecha_finalizacion: datetime | None = None
     distancia_metros: float | None = None
-    calificacion: int | None = None
+    tecnico_aceptado_id: UUID | None = None
+    evidencias: list[EvidenciaServicioTecnicoLeer] | None = None
 
 
 class ServicioListaTecnicoLeer(BaseModel):
-    items: list[ServicioListaTecnicoItemLeer]
+    items: list[ServicioTecnicoResumenLeer]
     total: int
     limit: int
     offset: int
+
+
+class ServicioDetalleTecnicoLeer(ServicioTecnicoDetalleLeer):
+    pass
+
+
+class ServicioListaTecnicoItemLeer(ServicioTecnicoResumenLeer):
+    pass
