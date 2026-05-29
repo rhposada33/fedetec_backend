@@ -30,6 +30,7 @@ class ServicioLeer(BaseModel):
     fecha_aceptacion: datetime | None = None
     fecha_inicio: datetime | None = None
     fecha_finalizacion: datetime | None = None
+    fecha_validacion: datetime | None = None
     fecha_creacion: datetime
     fecha_actualizacion: datetime
 

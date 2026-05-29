@@ -295,6 +295,25 @@ async def finalizar_servicio(
     return servicio
 
 
+@router.post("/{servicio_id}/validar", response_model=ServicioLeer)
+async def validar_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> ServicioLeer:
+    try:
+        servicio = await ServicioServicio(session).validar(servicio_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
+
+
 @router.post("/{servicio_id}/evidencias", response_model=EvidenciaServicioLeer)
 async def crear_evidencia_servicio(
     servicio_id: UUID,

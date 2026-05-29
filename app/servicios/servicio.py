@@ -202,6 +202,22 @@ class ServicioServicio:
             raise RuntimeError("No fue posible recuperar el servicio finalizado")
         return self._serializar(finalizado)
 
+    async def validar(self, servicio_id: UUID) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        if servicio.estado != "FINALIZADO":
+            raise ValueError("Solo se pueden validar servicios en estado FINALIZADO")
+
+        servicio.estado = "VALIDADO"
+        servicio.fecha_validacion = datetime.now(UTC)
+        await self.session.commit()
+
+        validado = await self.servicios.obtener_por_id(servicio_id)
+        if validado is None:
+            raise RuntimeError("No fue posible recuperar el servicio validado")
+        return self._serializar(validado)
+
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:
         servicio = servicio_con_ubicacion.servicio
@@ -220,6 +236,7 @@ class ServicioServicio:
             fecha_aceptacion=servicio.fecha_aceptacion,
             fecha_inicio=servicio.fecha_inicio,
             fecha_finalizacion=servicio.fecha_finalizacion,
+            fecha_validacion=servicio.fecha_validacion,
             fecha_creacion=servicio.fecha_creacion,
             fecha_actualizacion=servicio.fecha_actualizacion,
         )

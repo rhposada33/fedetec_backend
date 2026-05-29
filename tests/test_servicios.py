@@ -174,6 +174,7 @@ def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
         fecha_aceptacion=None,
         fecha_inicio=None,
         fecha_finalizacion=None,
+        fecha_validacion=None,
     )
 
 
@@ -646,3 +647,62 @@ async def test_finalizar_servicio_valida_estado_en_proceso(
 
     with pytest.raises(ValueError, match="estado EN_PROCESO"):
         await ServicioServicio(SimpleNamespace()).finalizar(SERVICIO_ID, tecnico)
+
+
+@pytest.mark.asyncio
+async def test_validar_servicio_cambia_estado_y_guarda_fecha_validacion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="FINALIZADO")
+    servicio.fecha_finalizacion = FECHA
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    respuesta = await ServicioServicio(SessionFake()).validar(SERVICIO_ID)
+
+    assert respuesta is not None
+    assert respuesta.estado == "VALIDADO"
+    assert respuesta.fecha_validacion is not None
+    assert servicio.fecha_validacion is not None
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_validar_servicio_rechaza_estado_distinto_a_finalizado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="EN_PROCESO")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="estado FINALIZADO"):
+        await ServicioServicio(SimpleNamespace()).validar(SERVICIO_ID)
+
+
+def test_validar_servicio_sin_admin_es_denegado() -> None:
+    response = client.post(f"/api/v1/servicios/{SERVICIO_ID}/validar")
+
+    assert response.status_code == 401
