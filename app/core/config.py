@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     BACKEND_CORS_ORIGINS: Annotated[list[str], NoDecode] = []
     BACKEND_CORS_ORIGIN_REGEX: str | None = None
+    STORAGE_PUBLIC_BASE_URL: str = "http://localhost:8000/storage"
+    STORAGE_UPLOAD_BASE_URL: str = "http://localhost:8000/storage"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

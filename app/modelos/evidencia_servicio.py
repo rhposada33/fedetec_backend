@@ -34,6 +34,7 @@ class EvidenciaServicio(Base):
         PG_UUID(as_uuid=True), ForeignKey("usuarios.id"), nullable=False
     )
     url_archivo: Mapped[str] = mapped_column(Text, nullable=False)
+    storage_key: Mapped[str | None] = mapped_column(Text)
     tipo_archivo: Mapped[str | None] = mapped_column(String(50))
     descripcion: Mapped[str | None] = mapped_column(Text)
     estado_aprobacion: Mapped[str] = mapped_column(String(30), default="PENDIENTE", nullable=False)

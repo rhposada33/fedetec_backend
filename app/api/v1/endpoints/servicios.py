@@ -17,7 +17,12 @@ from app.repositorios.calificacion_servicio import CalificacionDuplicadaError
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError
 from app.schemas.calificacion_servicio import CalificacionServicioCrear, CalificacionServicioLeer
-from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
+from app.schemas.evidencia_servicio import (
+    EvidenciaServicioCrear,
+    EvidenciaServicioLeer,
+    EvidenciaUploadUrlLeer,
+    EvidenciaUploadUrlSolicitar,
+)
 from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
@@ -419,6 +424,33 @@ async def crear_evidencia_servicio(
             detail="Servicio no encontrado",
         )
     return evidencia
+
+
+@router.post(
+    "/{servicio_id}/evidencias/upload-url",
+    response_model=EvidenciaUploadUrlLeer,
+)
+async def crear_upload_url_evidencia_servicio(
+    servicio_id: UUID,
+    upload_in: EvidenciaUploadUrlSolicitar,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> EvidenciaUploadUrlLeer:
+    try:
+        upload = await EvidenciaServicioServicio(session).crear_upload_url(
+            servicio_id, tecnico_actual, upload_in
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    if upload is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return upload
 
 
 @router.get("/{servicio_id}/evidencias", response_model=list[EvidenciaServicioLeer])

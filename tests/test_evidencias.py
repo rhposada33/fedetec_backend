@@ -9,8 +9,9 @@ os.environ["DEBUG"] = "false"
 os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:5432/fedetec"
 
+from app.core.storage import UploadUrlGenerada
 from app.repositorios.servicio import ServicioConUbicacion
-from app.schemas.evidencia_servicio import EvidenciaServicioCrear
+from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaUploadUrlSolicitar
 from app.servicios import evidencia_servicio as evidencia_modulo
 from app.servicios.evidencia_servicio import EvidenciaServicioServicio
 
@@ -39,6 +40,7 @@ def crear_evidencia_fake(estado: str = "PENDIENTE") -> SimpleNamespace:
         servicio_id=SERVICIO_ID,
         subido_por_usuario_id=USUARIO_TECNICO_ID,
         url_archivo="https://example.com/evidencia.jpg",
+        storage_key="evidencias/servicio/evidencia.jpg",
         tipo_archivo="image/jpeg",
         descripcion="Foto final",
         estado_aprobacion=estado,
@@ -97,6 +99,22 @@ class ConfiguracionAutoFake:
         return {"modo": "AUTO"}
 
 
+class StorageFake:
+    content_type = None
+    storage_key = None
+
+    async def crear_upload_url(
+        self, storage_key: str, content_type: str
+    ) -> UploadUrlGenerada:
+        self.__class__.storage_key = storage_key
+        self.__class__.content_type = content_type
+        return UploadUrlGenerada(
+            upload_url=f"https://storage.example.com/upload/{storage_key}",
+            public_url=f"https://cdn.example.com/{storage_key}",
+            storage_key=storage_key,
+        )
+
+
 def parchear_repositorios(
     monkeypatch: pytest.MonkeyPatch, configuracion: type = ConfiguracionManualFake
 ) -> None:
@@ -123,6 +141,7 @@ async def test_crear_evidencia_asignada_crea_registro_pendiente(
 
     assert evidencia is not None
     assert evidencia.url_archivo == "https://example.com/evidencia.jpg"
+    assert evidencia.storage_key is None
     assert evidencia.tipo_archivo == "image/jpeg"
     assert evidencia.descripcion == "Foto final"
     assert evidencia.estado_aprobacion == "PENDIENTE"
@@ -159,6 +178,88 @@ async def test_configuracion_auto_aprueba_evidencia_al_crear(
     assert evidencia.estado_aprobacion == "APROBADA"
     assert evidencia.aprobado_por_usuario_id == USUARIO_TECNICO_ID
     assert evidencia.fecha_aprobacion is not None
+
+
+@pytest.mark.asyncio
+async def test_upload_url_evidencia_tecnico_asignado_responde_urls(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parchear_repositorios(monkeypatch)
+
+    respuesta = await EvidenciaServicioServicio(object(), StorageFake()).crear_upload_url(
+        SERVICIO_ID,
+        crear_tecnico_fake(),
+        EvidenciaUploadUrlSolicitar(
+            filename="gps instalado.jpg",
+            content_type="image/jpeg",
+        ),
+    )
+
+    assert respuesta is not None
+    assert respuesta.storage_key.startswith(f"evidencias/{SERVICIO_ID}/")
+    assert respuesta.storage_key.endswith("-gps-instalado.jpg")
+    assert respuesta.upload_url == f"https://storage.example.com/upload/{respuesta.storage_key}"
+    assert respuesta.public_url == f"https://cdn.example.com/{respuesta.storage_key}"
+    assert StorageFake.content_type == "image/jpeg"
+
+
+@pytest.mark.asyncio
+async def test_upload_url_evidencia_rechaza_tecnico_no_asignado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parchear_repositorios(monkeypatch)
+
+    with pytest.raises(PermissionError, match="tecnico asignado"):
+        await EvidenciaServicioServicio(object(), StorageFake()).crear_upload_url(
+            SERVICIO_ID,
+            crear_tecnico_fake(UUID("88888888-8888-8888-8888-888888888888")),
+            EvidenciaUploadUrlSolicitar(
+                filename="gps-installed.jpg",
+                content_type="image/jpeg",
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_upload_url_evidencia_rechaza_tipo_archivo_invalido(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parchear_repositorios(monkeypatch)
+
+    with pytest.raises(ValueError, match="Tipo de archivo"):
+        await EvidenciaServicioServicio(object(), StorageFake()).crear_upload_url(
+            SERVICIO_ID,
+            crear_tecnico_fake(),
+            EvidenciaUploadUrlSolicitar(
+                filename="script.exe",
+                content_type="application/x-msdownload",
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_upload_url_evidencia_retorna_none_si_servicio_no_existe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class ServicioRepositorioNoEncontradoFake(ServicioRepositorioFake):
+        async def obtener_por_id(self, servicio_id: UUID) -> None:
+            return None
+
+    parchear_repositorios(monkeypatch)
+    monkeypatch.setattr(
+        evidencia_modulo, "ServicioRepositorio", ServicioRepositorioNoEncontradoFake
+    )
+
+    respuesta = await EvidenciaServicioServicio(object(), StorageFake()).crear_upload_url(
+        SERVICIO_ID,
+        crear_tecnico_fake(),
+        EvidenciaUploadUrlSolicitar(
+            filename="gps-installed.jpg",
+            content_type="image/png",
+        ),
+    )
+
+    assert respuesta is None
 
 
 @pytest.mark.asyncio
