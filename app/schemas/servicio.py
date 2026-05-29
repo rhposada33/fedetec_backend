@@ -49,6 +49,11 @@ class ServicioReprogramar(BaseModel):
     motivo: str | None = None
 
 
+class ServicioReasignar(BaseModel):
+    tecnico_id: UUID
+    motivo: str | None = None
+
+
 class ReprogramacionServicioLeer(BaseModel):
     id: UUID
     servicio_id: UUID

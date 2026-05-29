@@ -19,6 +19,7 @@ from app.schemas.servicio import (
     ServicioCrear,
     ServicioLeer,
     ServicioPublicadoLeer,
+    ServicioReasignar,
     ServicioRechazadoLeer,
     ServicioRechazar,
     ServicioReprogramar,
@@ -232,6 +233,41 @@ class ServicioServicio:
         if validado is None:
             raise RuntimeError("No fue posible recuperar el servicio validado")
         return self._serializar(validado)
+
+    async def reasignar(
+        self, servicio_id: UUID, reasignacion_in: ServicioReasignar
+    ) -> ServicioLeer | None:
+        servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
+        if servicio is None:
+            return None
+        if servicio.estado not in {
+            "DISPONIBLE",
+            "ACEPTADO",
+            "REPROGRAMACION_SOLICITADA",
+        }:
+            raise ValueError("El servicio no permite reasignacion")
+
+        tecnico_con_ubicacion = await self.tecnicos.obtener_por_id(reasignacion_in.tecnico_id)
+        if tecnico_con_ubicacion is None:
+            raise LookupError("Tecnico no encontrado")
+        if not tecnico_con_ubicacion.tecnico.esta_disponible:
+            raise ValueError("Solo se puede reasignar a tecnicos disponibles")
+
+        servicio.estado = "ACEPTADO"
+        servicio.tecnico_aceptado_id = tecnico_con_ubicacion.tecnico.id
+        servicio.fecha_aceptacion = datetime.now(UTC)
+        await self.notificaciones.crear_para_tecnicos_una_vez(
+            servicio.id, [tecnico_con_ubicacion.tecnico.id]
+        )
+        await self.notificaciones.actualizar_estado_para_tecnico(
+            servicio.id, tecnico_con_ubicacion.tecnico.id, "ACEPTADA"
+        )
+        await self.session.commit()
+
+        reasignado = await self.servicios.obtener_por_id(servicio_id)
+        if reasignado is None:
+            raise RuntimeError("No fue posible recuperar el servicio reasignado")
+        return self._serializar(reasignado)
 
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:
