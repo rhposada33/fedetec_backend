@@ -182,6 +182,58 @@ def crear_tecnico_fake() -> SimpleNamespace:
     return SimpleNamespace(id=UUID("44444444-4444-4444-4444-444444444444"))
 
 
+def crear_servicio_historial_fake() -> SimpleNamespace:
+    tecnico_id = crear_tecnico_fake().id
+    usuario_id = UUID("99999999-9999-9999-9999-999999999999")
+    evidencia_id = UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+    reporte_id = UUID("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+    calificacion_id = UUID("cccccccc-cccc-cccc-cccc-cccccccccccc")
+    servicio = crear_servicio_fake(estado="PAGO_GENERADO")
+    servicio.tecnico_aceptado_id = tecnico_id
+    servicio.fecha_aceptacion = FECHA.replace(hour=10)
+    servicio.fecha_inicio = FECHA.replace(hour=11)
+    servicio.fecha_finalizacion = FECHA.replace(hour=12)
+    servicio.fecha_validacion = FECHA.replace(hour=13)
+    servicio.fecha_pago_generado = FECHA.replace(hour=14)
+    servicio.notificaciones = [
+        SimpleNamespace(
+            id=UUID("dddddddd-dddd-dddd-dddd-dddddddddddd"),
+            tecnico_id=tecnico_id,
+            estado="ACEPTADA",
+            fecha_envio=FECHA.replace(hour=9),
+            fecha_lectura=None,
+        )
+    ]
+    servicio.rechazos = []
+    servicio.reprogramaciones = []
+    servicio.evidencias = [
+        SimpleNamespace(
+            id=evidencia_id,
+            subido_por_usuario_id=usuario_id,
+            url_archivo="https://example.com/evidencia.jpg",
+            tipo_archivo="imagen",
+            descripcion="Foto final",
+            estado_aprobacion="APROBADA",
+            aprobado_por_usuario_id=usuario_id,
+            fecha_creacion=FECHA.replace(hour=12, minute=10),
+            fecha_aprobacion=FECHA.replace(hour=12, minute=20),
+        )
+    ]
+    servicio.reporte_pago = SimpleNamespace(
+        id=reporte_id,
+        estado="GENERADO",
+        valor=100000,
+        fecha_generacion=FECHA.replace(hour=13, minute=30),
+    )
+    servicio.calificacion = SimpleNamespace(
+        id=calificacion_id,
+        puntuacion=5,
+        comentario="Buen servicio",
+        fecha_calificacion=FECHA.replace(hour=15),
+    )
+    return servicio
+
+
 @pytest.mark.asyncio
 async def test_publicar_servicio_selecciona_cercanos_notifica_y_cambia_estado(
     monkeypatch: pytest.MonkeyPatch,
@@ -265,6 +317,70 @@ async def test_publicar_servicio_rechaza_estado_distinto_a_creado(
 
     with pytest.raises(ValueError, match="estado CREADO"):
         await ServicioServicio(object()).publicar(SERVICIO_ID)
+
+
+@pytest.mark.asyncio
+async def test_historial_servicio_agrega_eventos_ordenados(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_historial_fake()
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_con_historial(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    historial = await ServicioServicio(object()).obtener_historial_admin(SERVICIO_ID)
+
+    assert historial is not None
+    tipos = [evento.tipo_evento for evento in historial]
+    assert tipos == [
+        "SERVICIO_CREADO",
+        "NOTIFICACION_ENVIADA",
+        "SERVICIO_ACEPTADO",
+        "SERVICIO_INICIADO",
+        "SERVICIO_FINALIZADO",
+        "EVIDENCIA_SUBIDA",
+        "EVIDENCIA_APROBADA",
+        "SERVICIO_VALIDADO",
+        "REPORTE_PAGO_GENERADO",
+        "SERVICIO_PAGO_GENERADO",
+        "SERVICIO_CALIFICADO",
+    ]
+    assert historial[-1].datos["puntuacion"] == 5
+
+
+@pytest.mark.asyncio
+async def test_historial_servicio_empresa_usa_servicio_de_su_empresa(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_historial_fake()
+    empresa = SimpleNamespace(id=EMPRESA_ID)
+
+    class ServicioRepositorioFake:
+        consulta: tuple[UUID, UUID] | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_y_empresa_con_historial(
+            self, servicio_id: UUID, empresa_cliente_id: UUID
+        ) -> SimpleNamespace:
+            self.__class__.consulta = (servicio_id, empresa_cliente_id)
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    historial = await ServicioServicio(object()).obtener_historial_empresa(
+        SERVICIO_ID, empresa
+    )
+
+    assert historial is not None
+    assert ServicioRepositorioFake.consulta == (SERVICIO_ID, EMPRESA_ID)
 
 
 def test_notificaciones_servicio_usa_on_conflict_para_evitar_duplicados() -> None:

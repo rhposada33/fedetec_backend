@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -66,3 +66,13 @@ class ServicioRechazadoLeer(BaseModel):
     tecnico_id: UUID
     rechazo_creado: bool
     estado: str
+
+
+class HistorialServicioEventoLeer(BaseModel):
+    fecha: datetime
+    tipo_evento: str
+    titulo: str
+    descripcion: str | None = None
+    entidad: str | None = None
+    entidad_id: UUID | None = None
+    datos: dict[str, Any] = Field(default_factory=dict)

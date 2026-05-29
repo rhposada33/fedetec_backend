@@ -14,6 +14,7 @@ from app.repositorios.reprogramacion_servicio import ReprogramacionServicioRepos
 from app.repositorios.servicio import ServicioConUbicacion, ServicioRepositorio
 from app.repositorios.tecnico import TecnicoRepositorio
 from app.schemas.servicio import (
+    HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
     ServicioCrear,
     ServicioLeer,
@@ -71,6 +72,20 @@ class ServicioServicio:
     async def obtener_admin(self, servicio_id: UUID) -> ServicioLeer | None:
         servicio = await self.servicios.obtener_por_id(servicio_id)
         return self._serializar(servicio) if servicio is not None else None
+
+    async def obtener_historial_admin(
+        self, servicio_id: UUID
+    ) -> list[HistorialServicioEventoLeer] | None:
+        servicio = await self.servicios.obtener_por_id_con_historial(servicio_id)
+        return self._construir_historial(servicio) if servicio is not None else None
+
+    async def obtener_historial_empresa(
+        self, servicio_id: UUID, empresa_cliente: EmpresaCliente
+    ) -> list[HistorialServicioEventoLeer] | None:
+        servicio = await self.servicios.obtener_por_id_y_empresa_con_historial(
+            servicio_id, empresa_cliente.id
+        )
+        return self._construir_historial(servicio) if servicio is not None else None
 
     async def publicar(
         self, servicio_id: UUID, radio_metros: int = 10_000
@@ -245,3 +260,205 @@ class ServicioServicio:
     def _validar_tecnico_asignado(servicio: Servicio, tecnico: Tecnico) -> None:
         if servicio.tecnico_aceptado_id != tecnico.id:
             raise PermissionError("Solo el tecnico asignado puede ejecutar esta accion")
+
+    @staticmethod
+    def _construir_historial(servicio: Servicio) -> list[HistorialServicioEventoLeer]:
+        eventos = [
+            HistorialServicioEventoLeer(
+                fecha=servicio.fecha_creacion,
+                tipo_evento="SERVICIO_CREADO",
+                titulo="Servicio creado",
+                entidad="servicio",
+                entidad_id=servicio.id,
+                datos={
+                    "estado": "CREADO",
+                    "tipo_servicio": servicio.tipo_servicio,
+                    "empresa_cliente_id": str(servicio.empresa_cliente_id),
+                    "fecha_programada": servicio.fecha_programada.isoformat(),
+                },
+            )
+        ]
+
+        for notificacion in servicio.notificaciones:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=notificacion.fecha_envio,
+                    tipo_evento="NOTIFICACION_ENVIADA",
+                    titulo="Notificacion enviada a tecnico",
+                    entidad="notificacion_servicio",
+                    entidad_id=notificacion.id,
+                    datos={
+                        "estado": notificacion.estado,
+                        "tecnico_id": str(notificacion.tecnico_id),
+                    },
+                )
+            )
+            if notificacion.fecha_lectura is not None:
+                eventos.append(
+                    HistorialServicioEventoLeer(
+                        fecha=notificacion.fecha_lectura,
+                        tipo_evento="NOTIFICACION_LEIDA",
+                        titulo="Notificacion leida por tecnico",
+                        entidad="notificacion_servicio",
+                        entidad_id=notificacion.id,
+                        datos={"tecnico_id": str(notificacion.tecnico_id)},
+                    )
+                )
+
+        for rechazo in servicio.rechazos:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=rechazo.fecha_creacion,
+                    tipo_evento="SERVICIO_RECHAZADO",
+                    titulo="Servicio rechazado por tecnico",
+                    descripcion=rechazo.motivo,
+                    entidad="rechazo_servicio",
+                    entidad_id=rechazo.id,
+                    datos={"tecnico_id": str(rechazo.tecnico_id)},
+                )
+            )
+
+        if servicio.fecha_aceptacion is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.fecha_aceptacion,
+                    tipo_evento="SERVICIO_ACEPTADO",
+                    titulo="Servicio aceptado",
+                    entidad="servicio",
+                    entidad_id=servicio.id,
+                    datos={"tecnico_id": str(servicio.tecnico_aceptado_id)},
+                )
+            )
+
+        for reprogramacion in servicio.reprogramaciones:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=reprogramacion.fecha_creacion,
+                    tipo_evento="REPROGRAMACION_SOLICITADA",
+                    titulo="Reprogramacion solicitada",
+                    descripcion=reprogramacion.motivo,
+                    entidad="reprogramacion_servicio",
+                    entidad_id=reprogramacion.id,
+                    datos={
+                        "estado": reprogramacion.estado,
+                        "tecnico_id": str(reprogramacion.tecnico_id),
+                        "fecha_propuesta": reprogramacion.fecha_propuesta.isoformat(),
+                    },
+                )
+            )
+
+        if servicio.fecha_inicio is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.fecha_inicio,
+                    tipo_evento="SERVICIO_INICIADO",
+                    titulo="Servicio iniciado",
+                    entidad="servicio",
+                    entidad_id=servicio.id,
+                    datos={"tecnico_id": str(servicio.tecnico_aceptado_id)},
+                )
+            )
+
+        for evidencia in servicio.evidencias:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=evidencia.fecha_creacion,
+                    tipo_evento="EVIDENCIA_SUBIDA",
+                    titulo="Evidencia subida",
+                    descripcion=evidencia.descripcion,
+                    entidad="evidencia_servicio",
+                    entidad_id=evidencia.id,
+                    datos={
+                        "estado_aprobacion": evidencia.estado_aprobacion,
+                        "tipo_archivo": evidencia.tipo_archivo,
+                        "url_archivo": evidencia.url_archivo,
+                        "subido_por_usuario_id": str(evidencia.subido_por_usuario_id),
+                    },
+                )
+            )
+            if evidencia.fecha_aprobacion is not None:
+                eventos.append(
+                    HistorialServicioEventoLeer(
+                        fecha=evidencia.fecha_aprobacion,
+                        tipo_evento=f"EVIDENCIA_{evidencia.estado_aprobacion}",
+                        titulo="Evidencia revisada",
+                        entidad="evidencia_servicio",
+                        entidad_id=evidencia.id,
+                        datos={
+                            "estado_aprobacion": evidencia.estado_aprobacion,
+                            "aprobado_por_usuario_id": (
+                                str(evidencia.aprobado_por_usuario_id)
+                                if evidencia.aprobado_por_usuario_id is not None
+                                else None
+                            ),
+                        },
+                    )
+                )
+
+        if servicio.fecha_finalizacion is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.fecha_finalizacion,
+                    tipo_evento="SERVICIO_FINALIZADO",
+                    titulo="Servicio finalizado",
+                    entidad="servicio",
+                    entidad_id=servicio.id,
+                    datos={"tecnico_id": str(servicio.tecnico_aceptado_id)},
+                )
+            )
+
+        if servicio.fecha_validacion is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.fecha_validacion,
+                    tipo_evento="SERVICIO_VALIDADO",
+                    titulo="Servicio validado",
+                    entidad="servicio",
+                    entidad_id=servicio.id,
+                )
+            )
+
+        if servicio.reporte_pago is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.reporte_pago.fecha_generacion,
+                    tipo_evento="REPORTE_PAGO_GENERADO",
+                    titulo="Reporte de pago generado",
+                    entidad="reporte_pago",
+                    entidad_id=servicio.reporte_pago.id,
+                    datos={
+                        "estado": servicio.reporte_pago.estado,
+                        "valor": (
+                            str(servicio.reporte_pago.valor)
+                            if servicio.reporte_pago.valor is not None
+                            else None
+                        ),
+                    },
+                )
+            )
+
+        if servicio.fecha_pago_generado is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.fecha_pago_generado,
+                    tipo_evento="SERVICIO_PAGO_GENERADO",
+                    titulo="Servicio marcado para pago",
+                    entidad="servicio",
+                    entidad_id=servicio.id,
+                )
+            )
+
+        if servicio.calificacion is not None:
+            eventos.append(
+                HistorialServicioEventoLeer(
+                    fecha=servicio.calificacion.fecha_calificacion,
+                    tipo_evento="SERVICIO_CALIFICADO",
+                    titulo="Servicio calificado",
+                    descripcion=servicio.calificacion.comentario,
+                    entidad="calificacion_servicio",
+                    entidad_id=servicio.calificacion.id,
+                    datos={"puntuacion": servicio.calificacion.puntuacion},
+                )
+            )
+
+        return sorted(eventos, key=lambda evento: evento.fecha)

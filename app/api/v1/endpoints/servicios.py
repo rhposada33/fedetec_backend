@@ -20,6 +20,7 @@ from app.schemas.calificacion_servicio import CalificacionServicioCrear, Calific
 from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
 from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
+    HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
     ServicioCrear,
     ServicioLeer,
@@ -88,6 +89,28 @@ async def obtener_servicio(
             detail="Servicio no encontrado",
         )
     return servicio
+
+
+@router.get("/{servicio_id}/historial", response_model=list[HistorialServicioEventoLeer])
+async def obtener_historial_servicio(
+    servicio_id: UUID, session: SesionDep, usuario_actual: UsuarioActualDep
+) -> list[HistorialServicioEventoLeer]:
+    servicio_servicio = ServicioServicio(session)
+    if usuario_es_admin(usuario_actual):
+        historial = await servicio_servicio.obtener_historial_admin(servicio_id)
+    elif usuario_es_empresa_cliente(usuario_actual) and usuario_actual.empresa_cliente is not None:
+        historial = await servicio_servicio.obtener_historial_empresa(
+            servicio_id, usuario_actual.empresa_cliente
+        )
+    else:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado")
+
+    if historial is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return historial
 
 
 @router.post(

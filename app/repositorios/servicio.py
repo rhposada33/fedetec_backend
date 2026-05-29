@@ -6,6 +6,7 @@ from geoalchemy2 import Geometry
 from sqlalchemy import Select, cast, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.modelos.servicio import Servicio
 
@@ -84,6 +85,20 @@ class ServicioRepositorio:
         stmt = select(Servicio).where(Servicio.id == servicio_id).with_for_update()
         return await self.session.scalar(stmt)
 
+    async def obtener_por_id_con_historial(self, servicio_id: UUID) -> Servicio | None:
+        stmt = self._select_historial().where(Servicio.id == servicio_id)
+        return await self.session.scalar(stmt)
+
+    async def obtener_por_id_y_empresa_con_historial(
+        self, servicio_id: UUID, empresa_cliente_id: UUID
+    ) -> Servicio | None:
+        stmt = (
+            self._select_historial()
+            .where(Servicio.id == servicio_id)
+            .where(Servicio.empresa_cliente_id == empresa_cliente_id)
+        )
+        return await self.session.scalar(stmt)
+
     async def obtener_por_idempotencia(
         self, empresa_cliente_id: UUID, clave_idempotencia: str
     ) -> ServicioConUbicacion | None:
@@ -138,6 +153,17 @@ class ServicioRepositorio:
             Servicio,
             func.ST_Y(ubicacion_geometry).label("latitud"),
             func.ST_X(ubicacion_geometry).label("longitud"),
+        )
+
+    @staticmethod
+    def _select_historial():
+        return select(Servicio).options(
+            selectinload(Servicio.notificaciones),
+            selectinload(Servicio.rechazos),
+            selectinload(Servicio.reprogramaciones),
+            selectinload(Servicio.evidencias),
+            selectinload(Servicio.reporte_pago),
+            selectinload(Servicio.calificacion),
         )
 
     @staticmethod
