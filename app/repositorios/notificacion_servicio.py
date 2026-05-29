@@ -1,10 +1,19 @@
+from typing import NamedTuple
 from uuid import UUID
 
-from sqlalchemy import update
+from geoalchemy2 import Geometry
+from sqlalchemy import cast, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.notificacion_servicio import NotificacionServicio
+from app.modelos.servicio import Servicio
+
+
+class NotificacionServicioConUbicacion(NamedTuple):
+    notificacion: NotificacionServicio
+    latitud: float
+    longitud: float
 
 
 class NotificacionServicioRepositorio:
@@ -47,3 +56,43 @@ class NotificacionServicioRepositorio:
         )
         result = await self.session.execute(stmt)
         return result.rowcount or 0
+
+    async def listar_para_tecnico(
+        self, tecnico_id: UUID
+    ) -> list[NotificacionServicioConUbicacion]:
+        stmt = (
+            self._select_con_servicio_ubicacion()
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+            .order_by(NotificacionServicio.fecha_envio.desc())
+        )
+        return [
+            NotificacionServicioConUbicacion(*row)
+            for row in (await self.session.execute(stmt)).all()
+        ]
+
+    async def listar_servicios_disponibles_para_tecnico(
+        self, tecnico_id: UUID
+    ) -> list[NotificacionServicioConUbicacion]:
+        stmt = (
+            self._select_con_servicio_ubicacion()
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+            .where(NotificacionServicio.estado.in_(["ENVIADA", "LEIDA"]))
+            .where(Servicio.estado == "DISPONIBLE")
+            .order_by(NotificacionServicio.fecha_envio.desc())
+        )
+        return [
+            NotificacionServicioConUbicacion(*row)
+            for row in (await self.session.execute(stmt)).all()
+        ]
+
+    @staticmethod
+    def _select_con_servicio_ubicacion():
+        ubicacion_geometry = cast(Servicio.ubicacion, Geometry)
+        return (
+            select(
+                NotificacionServicio,
+                func.ST_Y(ubicacion_geometry).label("latitud"),
+                func.ST_X(ubicacion_geometry).label("longitud"),
+            )
+            .join(NotificacionServicio.servicio)
+        )

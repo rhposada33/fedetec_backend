@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.schemas.servicio import ServicioLeer
+
 
 class UbicacionTecnicoActualizar(BaseModel):
     latitud: float = Field(ge=-90, le=90)
@@ -28,3 +30,13 @@ class TecnicoLeer(BaseModel):
 
 class TecnicoCercanoLeer(TecnicoLeer):
     distancia_metros: float
+
+
+class NotificacionServicioTecnicoLeer(BaseModel):
+    id: UUID
+    servicio_id: UUID
+    tecnico_id: UUID
+    estado: str
+    fecha_envio: datetime
+    fecha_lectura: datetime | None = None
+    servicio: ServicioLeer

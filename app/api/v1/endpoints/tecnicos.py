@@ -5,10 +5,12 @@ from fastapi import APIRouter, Query
 from app.api.deps import SesionDep, TecnicoActualDep, UsuarioActualDep
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
+    NotificacionServicioTecnicoLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
 )
+from app.schemas.servicio import ServicioLeer
 from app.servicios.tecnico import TecnicoServicio
 
 router = APIRouter()
@@ -39,6 +41,20 @@ async def actualizar_disponibilidad_tecnico_actual(
     return await TecnicoServicio(session).actualizar_disponibilidad(
         tecnico_actual, disponibilidad_in
     )
+
+
+@router.get("/yo/servicios-disponibles", response_model=list[ServicioLeer])
+async def listar_servicios_disponibles_tecnico_actual(
+    session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> list[ServicioLeer]:
+    return await TecnicoServicio(session).listar_servicios_disponibles(tecnico_actual)
+
+
+@router.get("/yo/notificaciones", response_model=list[NotificacionServicioTecnicoLeer])
+async def listar_notificaciones_tecnico_actual(
+    session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> list[NotificacionServicioTecnicoLeer]:
+    return await TecnicoServicio(session).listar_notificaciones(tecnico_actual)
 
 
 @router.get("/cercanos", response_model=list[TecnicoCercanoLeer])
