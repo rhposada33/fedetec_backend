@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query
 
 from app.api.deps import SesionDep, TecnicoActualDep, UsuarioActualDep
+from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     NotificacionServicioTecnicoLeer,
@@ -10,7 +11,6 @@ from app.schemas.tecnico import (
     TecnicoLeer,
     UbicacionTecnicoActualizar,
 )
-from app.schemas.servicio import ServicioLeer
 from app.servicios.tecnico import TecnicoServicio
 
 router = APIRouter()
