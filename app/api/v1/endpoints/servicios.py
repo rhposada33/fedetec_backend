@@ -25,6 +25,7 @@ from app.schemas.servicio import (
     ServicioCrear,
     ServicioLeer,
     ServicioPublicadoLeer,
+    ServicioReasignar,
     ServicioRechazadoLeer,
     ServicioRechazar,
     ServicioReprogramar,
@@ -326,6 +327,28 @@ async def validar_servicio(
 ) -> ServicioLeer:
     try:
         servicio = await ServicioServicio(session).validar(servicio_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
+
+
+@router.post("/{servicio_id}/reasignar", response_model=ServicioLeer)
+async def reasignar_servicio(
+    servicio_id: UUID,
+    reasignacion_in: ServicioReasignar,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> ServicioLeer:
+    try:
+        servicio = await ServicioServicio(session).reasignar(servicio_id, reasignacion_in)
+    except LookupError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 

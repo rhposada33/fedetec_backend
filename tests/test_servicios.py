@@ -178,8 +178,11 @@ def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
     )
 
 
-def crear_tecnico_fake() -> SimpleNamespace:
-    return SimpleNamespace(id=UUID("44444444-4444-4444-4444-444444444444"))
+def crear_tecnico_fake(esta_disponible: bool = True) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=UUID("44444444-4444-4444-4444-444444444444"),
+        esta_disponible=esta_disponible,
+    )
 
 
 def crear_servicio_historial_fake() -> SimpleNamespace:
@@ -820,5 +823,142 @@ async def test_validar_servicio_rechaza_estado_distinto_a_finalizado(
 
 def test_validar_servicio_sin_admin_es_denegado() -> None:
     response = client.post(f"/api/v1/servicios/{SERVICIO_ID}/validar")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_reasignar_servicio_asigna_tecnico_disponible_y_marca_notificacion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="ACEPTADO")
+    tecnico_anterior = UUID("55555555-5555-5555-5555-555555555555")
+    tecnico_nuevo = crear_tecnico_fake(esta_disponible=True)
+    servicio.tecnico_aceptado_id = tecnico_anterior
+
+    class SessionFake:
+        commits = 0
+
+        async def commit(self) -> None:
+            self.__class__.commits += 1
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+        async def obtener_por_id(self, servicio_id: UUID) -> ServicioConUbicacion:
+            return ServicioConUbicacion(servicio, 4.711, -74.0721)
+
+    class TecnicoRepositorioFake:
+        consulta: UUID | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion:
+            self.__class__.consulta = tecnico_id
+            return TecnicoConUbicacion(tecnico_nuevo, None, None)
+
+    class NotificacionRepositorioFake:
+        creados: list[UUID] = []
+        estado_notificacion: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def crear_para_tecnicos_una_vez(
+            self, servicio_id: UUID, tecnico_ids: list[UUID]
+        ) -> int:
+            self.__class__.creados = tecnico_ids
+            return len(tecnico_ids)
+
+        async def actualizar_estado_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID, estado: str
+        ) -> int:
+            self.__class__.estado_notificacion = estado
+            return 1
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(servicio_modulo, "TecnicoRepositorio", TecnicoRepositorioFake)
+    monkeypatch.setattr(
+        servicio_modulo, "NotificacionServicioRepositorio", NotificacionRepositorioFake
+    )
+
+    respuesta = await ServicioServicio(SessionFake()).reasignar(
+        SERVICIO_ID,
+        servicio_modulo.ServicioReasignar(tecnico_id=tecnico_nuevo.id, motivo="Cambio manual"),
+    )
+
+    assert respuesta is not None
+    assert respuesta.estado == "ACEPTADO"
+    assert respuesta.tecnico_aceptado_id == tecnico_nuevo.id
+    assert servicio.fecha_aceptacion is not None
+    assert TecnicoRepositorioFake.consulta == tecnico_nuevo.id
+    assert NotificacionRepositorioFake.creados == [tecnico_nuevo.id]
+    assert NotificacionRepositorioFake.estado_notificacion == "ACEPTADA"
+    assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_reasignar_servicio_rechaza_estado_terminal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="FINALIZADO")
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    with pytest.raises(ValueError, match="no permite reasignacion"):
+        await ServicioServicio(SimpleNamespace()).reasignar(
+            SERVICIO_ID,
+            servicio_modulo.ServicioReasignar(tecnico_id=crear_tecnico_fake().id),
+        )
+
+
+@pytest.mark.asyncio
+async def test_reasignar_servicio_rechaza_tecnico_no_disponible(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake(estado="DISPONIBLE")
+    tecnico = crear_tecnico_fake(esta_disponible=False)
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    class TecnicoRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion:
+            return TecnicoConUbicacion(tecnico, None, None)
+
+    monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(servicio_modulo, "TecnicoRepositorio", TecnicoRepositorioFake)
+
+    with pytest.raises(ValueError, match="tecnicos disponibles"):
+        await ServicioServicio(SimpleNamespace()).reasignar(
+            SERVICIO_ID,
+            servicio_modulo.ServicioReasignar(tecnico_id=tecnico.id),
+        )
+
+
+def test_reasignar_servicio_sin_admin_es_denegado() -> None:
+    response = client.post(
+        f"/api/v1/servicios/{SERVICIO_ID}/reasignar",
+        json={"tecnico_id": str(crear_tecnico_fake().id)},
+    )
 
     assert response.status_code == 401
