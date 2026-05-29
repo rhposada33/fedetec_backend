@@ -104,6 +104,8 @@ class ServicioTecnicoResumenLeer(BaseModel):
     tipo_servicio_nombre: str
     estado: str
     placa_vehiculo: str | None = None
+    latitud: float
+    longitud: float
     direccion: str | None = None
     ciudad: str | None = None
     fecha_programada: datetime

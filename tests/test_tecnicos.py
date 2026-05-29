@@ -598,11 +598,56 @@ async def test_listar_servicios_tecnico_devuelve_items_paginados(
     assert respuesta.items[0].id == SERVICIO_ID
     assert respuesta.items[0].codigo == "SV-66666666"
     assert respuesta.items[0].estado == "VALIDADO"
+    assert respuesta.items[0].latitud == 3.4516
+    assert respuesta.items[0].longitud == -76.532
+    assert respuesta.items[0].direccion == "Cra 45 #12-30, Cali"
     assert respuesta.items[0].ciudad == "Cali"
     assert respuesta.items[0].calificacion == 5
     assert respuesta.items[0].badge_estado == "success"
     assert RepositorioFake.parametros["tecnico_id"] == TECNICO_ID
     assert RepositorioFake.parametros["estado"] == "VALIDADO"
+
+
+@pytest.mark.asyncio
+async def test_servicios_tecnico_serializa_coordenadas_sin_postgis_raw(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio(estado="DISPONIBLE")
+    servicio.direccion = "Cra 45 #12-30, Cali, Valle"
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def listar_para_tecnico(
+            self,
+            tecnico_id: UUID,
+            estado: str | None = None,
+            fecha_desde: datetime | None = None,
+            fecha_hasta: datetime | None = None,
+            limit: int = 20,
+            offset: int = 0,
+        ) -> tuple[list[ServicioListaTecnico], int]:
+            return [
+                ServicioListaTecnico(
+                    servicio=servicio,
+                    latitud=3.4516,
+                    longitud=-76.532,
+                    distancia_metros=None,
+                    calificacion=None,
+                )
+            ], 1
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).listar_servicios_tecnico(tecnico)
+    serializado = respuesta.items[0].model_dump()
+
+    assert serializado["latitud"] == 3.4516
+    assert serializado["longitud"] == -76.532
+    assert serializado["direccion"] == "Cra 45 #12-30, Cali, Valle"
+    assert "ubicacion" not in serializado
 
 
 @pytest.mark.asyncio
@@ -638,6 +683,8 @@ async def test_listar_servicios_tecnico_sql_filtra_estado_fecha_y_usuario() -> N
 
     assert "notificaciones_servicio.tecnico_id" in sql
     assert "servicios.tecnico_aceptado_id = " in sql
+    assert "ST_Y(CAST(servicios.ubicacion AS geometry" in sql
+    assert "ST_X(CAST(servicios.ubicacion AS geometry" in sql
     assert "servicios.estado = " in sql
     assert "servicios.fecha_programada >= " in sql
     assert "servicios.fecha_programada <= " in sql

@@ -92,6 +92,12 @@ La API expone:
 - `POST /api/v1/sedes`
 - `GET /api/v1/sedes`
 
+## Mapas en Flutter
+
+En el MVP el backend no calcula rutas, ETA, polilíneas ni deep links de navegación. La app Flutter debe calcular esos datos con Google Maps, Mapbox o el SDK nativo usando las coordenadas devueltas por los endpoints móviles de técnico.
+
+Los servicios para técnico devuelven coordenadas WGS84 / EPSG:4326 ya serializadas como `latitud` y `longitud`, más `direccion` legible. El backend convierte el punto PostGIS con `ST_Y` y `ST_X`; no expone objetos PostGIS crudos a Flutter.
+
 ## Docker local
 
 Crear variables de entorno locales:

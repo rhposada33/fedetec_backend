@@ -360,6 +360,8 @@ class TecnicoServicio:
             tipo_servicio_nombre=cls._nombre_tipo_servicio(servicio.tipo_servicio),
             estado=servicio.estado,
             placa_vehiculo=servicio.placa_vehiculo,
+            latitud=item.latitud,
+            longitud=item.longitud,
             direccion=servicio.direccion,
             ciudad=cls._extraer_ciudad(servicio.direccion),
             fecha_programada=servicio.fecha_programada,
