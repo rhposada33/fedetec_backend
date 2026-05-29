@@ -11,7 +11,11 @@ os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:5432/fedetec"
 
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
-from app.repositorios.tecnico import TecnicoConUbicacion, TecnicoRepositorio
+from app.repositorios.tecnico import (
+    MetricasRendimientoTecnico,
+    TecnicoConUbicacion,
+    TecnicoRepositorio,
+)
 from app.schemas.tecnico import DisponibilidadTecnicoActualizar, UbicacionTecnicoActualizar
 from app.servicios import tecnico as tecnico_modulo
 from app.servicios.tecnico import TecnicoServicio
@@ -222,6 +226,76 @@ async def test_notificaciones_tecnico_incluyen_servicio(
     assert respuesta[0].id == NOTIFICACION_ID
     assert respuesta[0].estado == "ENVIADA"
     assert respuesta[0].servicio.id == SERVICIO_ID
+
+
+@pytest.mark.asyncio
+async def test_metricas_rendimiento_tecnico_serializa_agregados(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion | None:
+            assert tecnico_id == TECNICO_ID
+            return TecnicoConUbicacion(tecnico, None, None)
+
+        async def obtener_metricas_rendimiento(
+            self, tecnico_id: UUID
+        ) -> MetricasRendimientoTecnico:
+            assert tecnico_id == TECNICO_ID
+            return MetricasRendimientoTecnico(
+                calificacion_promedio=4.5,
+                servicios_completados=3,
+                servicios_aceptados=5,
+                servicios_rechazados=2,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "TecnicoRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_metricas_rendimiento(TECNICO_ID)
+
+    assert respuesta is not None
+    assert respuesta.tecnico_id == TECNICO_ID
+    assert respuesta.calificacion_promedio == 4.5
+    assert respuesta.servicios_completados == 3
+    assert respuesta.servicios_aceptados == 5
+    assert respuesta.servicios_rechazados == 2
+
+
+@pytest.mark.asyncio
+async def test_metricas_rendimiento_tecnico_usa_agregados_sql() -> None:
+    class SessionFake:
+        statements = []
+        resultados = [5, 3, 2, 4.5]
+
+        async def scalar(self, statement: object) -> object:
+            self.__class__.statements.append(statement)
+            return self.__class__.resultados.pop(0)
+
+    respuesta = await TecnicoRepositorio(SessionFake()).obtener_metricas_rendimiento(
+        TECNICO_ID
+    )
+
+    sql = [
+        str(
+            statement.compile(
+                dialect=postgresql.dialect(), compile_kwargs={"literal_binds": False}
+            )
+        )
+        for statement in SessionFake.statements
+    ]
+
+    assert respuesta.servicios_aceptados == 5
+    assert respuesta.servicios_completados == 3
+    assert respuesta.servicios_rechazados == 2
+    assert respuesta.calificacion_promedio == 4.5
+    assert "servicios.tecnico_aceptado_id = " in sql[0]
+    assert "servicios.estado IN" in sql[1]
+    assert "rechazos_servicio.tecnico_id = " in sql[2]
+    assert "avg(calificaciones_servicio.puntuacion)" in sql[3]
 
 
 @pytest.mark.asyncio

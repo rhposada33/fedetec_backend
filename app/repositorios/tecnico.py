@@ -7,6 +7,9 @@ from sqlalchemy import cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modelos.calificacion_servicio import CalificacionServicio
+from app.modelos.rechazo_servicio import RechazoServicio
+from app.modelos.servicio import Servicio
 from app.modelos.tecnico import Tecnico
 
 
@@ -15,6 +18,13 @@ class TecnicoConUbicacion(NamedTuple):
     latitud: float | None
     longitud: float | None
     distancia_metros: float | None = None
+
+
+class MetricasRendimientoTecnico(NamedTuple):
+    calificacion_promedio: float | None
+    servicios_completados: int
+    servicios_aceptados: int
+    servicios_rechazados: int
 
 
 class TecnicoRepositorio:
@@ -50,6 +60,34 @@ class TecnicoRepositorio:
             .order_by(distancia)
         )
         return [TecnicoConUbicacion(*row) for row in (await self.session.execute(stmt)).all()]
+
+    async def obtener_metricas_rendimiento(
+        self, tecnico_id: UUID
+    ) -> MetricasRendimientoTecnico:
+        servicios_aceptados = await self.session.scalar(
+            select(func.count(Servicio.id)).where(Servicio.tecnico_aceptado_id == tecnico_id)
+        )
+        servicios_completados = await self.session.scalar(
+            select(func.count(Servicio.id))
+            .where(Servicio.tecnico_aceptado_id == tecnico_id)
+            .where(Servicio.estado.in_(["FINALIZADO", "VALIDADO", "PAGO_GENERADO"]))
+        )
+        servicios_rechazados = await self.session.scalar(
+            select(func.count(RechazoServicio.id)).where(RechazoServicio.tecnico_id == tecnico_id)
+        )
+        calificacion_promedio = await self.session.scalar(
+            select(func.avg(CalificacionServicio.puntuacion)).where(
+                CalificacionServicio.tecnico_id == tecnico_id
+            )
+        )
+        return MetricasRendimientoTecnico(
+            calificacion_promedio=(
+                float(calificacion_promedio) if calificacion_promedio is not None else None
+            ),
+            servicios_completados=int(servicios_completados or 0),
+            servicios_aceptados=int(servicios_aceptados or 0),
+            servicios_rechazados=int(servicios_rechazados or 0),
+        )
 
     @staticmethod
     def _select_con_ubicacion(distancia=None):

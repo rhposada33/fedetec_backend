@@ -1,14 +1,14 @@
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import AdminDep, SesionDep
 from app.schemas.admin import ConfiguracionActualizar, ConfiguracionLeer, DashboardLeer
 from app.schemas.empresa_cliente import EmpresaClienteLeer
 from app.schemas.evidencia_servicio import EvidenciaServicioLeer
 from app.schemas.servicio import ServicioLeer
-from app.schemas.tecnico import TecnicoLeer
+from app.schemas.tecnico import MetricasRendimientoTecnicoLeer, TecnicoLeer
 from app.servicios.admin import AdminServicio
 
 router = APIRouter()
@@ -51,6 +51,21 @@ async def listar_tecnicos_admin(
     esta_disponible: bool | None = None,
 ) -> list[TecnicoLeer]:
     return await AdminServicio(session).listar_tecnicos(esta_disponible)
+
+
+@router.get("/tecnicos/{tecnico_id}/metricas", response_model=MetricasRendimientoTecnicoLeer)
+async def obtener_metricas_tecnico_admin(
+    tecnico_id: UUID,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> MetricasRendimientoTecnicoLeer:
+    metricas = await AdminServicio(session).obtener_metricas_tecnico(tecnico_id)
+    if metricas is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tecnico no encontrado",
+        )
+    return metricas
 
 
 @router.get("/empresas-cliente", response_model=list[EmpresaClienteLeer])

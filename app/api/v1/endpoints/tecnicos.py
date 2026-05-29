@@ -6,6 +6,7 @@ from app.api.deps import SesionDep, TecnicoActualDep, UsuarioActualDep
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
+    MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
@@ -55,6 +56,16 @@ async def listar_notificaciones_tecnico_actual(
     session: SesionDep, tecnico_actual: TecnicoActualDep
 ) -> list[NotificacionServicioTecnicoLeer]:
     return await TecnicoServicio(session).listar_notificaciones(tecnico_actual)
+
+
+@router.get("/yo/metricas", response_model=MetricasRendimientoTecnicoLeer)
+async def obtener_metricas_tecnico_actual(
+    session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> MetricasRendimientoTecnicoLeer:
+    metricas = await TecnicoServicio(session).obtener_metricas_rendimiento(tecnico_actual.id)
+    if metricas is None:
+        raise RuntimeError("No fue posible recuperar las metricas del tecnico actual")
+    return metricas
 
 
 @router.get("/cercanos", response_model=list[TecnicoCercanoLeer])

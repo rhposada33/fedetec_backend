@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import UUID
 
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,6 +13,7 @@ from app.repositorios.tecnico import TecnicoConUbicacion, TecnicoRepositorio
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
+    MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
@@ -81,6 +83,21 @@ class TecnicoServicio:
             )
             for notificacion in notificaciones
         ]
+
+    async def obtener_metricas_rendimiento(
+        self, tecnico_id: UUID
+    ) -> MetricasRendimientoTecnicoLeer | None:
+        tecnico = await self.tecnicos.obtener_por_id(tecnico_id)
+        if tecnico is None:
+            return None
+        metricas = await self.tecnicos.obtener_metricas_rendimiento(tecnico_id)
+        return MetricasRendimientoTecnicoLeer(
+            tecnico_id=tecnico_id,
+            calificacion_promedio=metricas.calificacion_promedio,
+            servicios_completados=metricas.servicios_completados,
+            servicios_aceptados=metricas.servicios_aceptados,
+            servicios_rechazados=metricas.servicios_rechazados,
+        )
 
     @staticmethod
     def _serializar(tecnico_con_ubicacion: TecnicoConUbicacion) -> TecnicoLeer:

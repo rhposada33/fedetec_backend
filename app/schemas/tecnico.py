@@ -32,6 +32,14 @@ class TecnicoCercanoLeer(TecnicoLeer):
     distancia_metros: float
 
 
+class MetricasRendimientoTecnicoLeer(BaseModel):
+    tecnico_id: UUID
+    calificacion_promedio: float | None = None
+    servicios_completados: int
+    servicios_aceptados: int
+    servicios_rechazados: int
+
+
 class NotificacionServicioTecnicoLeer(BaseModel):
     id: UUID
     servicio_id: UUID
