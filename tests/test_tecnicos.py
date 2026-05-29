@@ -12,6 +12,7 @@ os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:5432/fedetec"
 
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
+from app.repositorios.servicio import ServicioDetalleTecnico
 from app.repositorios.tecnico import (
     MetricasRendimientoTecnico,
     TecnicoConUbicacion,
@@ -69,6 +70,7 @@ def crear_servicio(estado: str = "DISPONIBLE") -> SimpleNamespace:
         estado=estado,
         clave_idempotencia="idem-1",
         tecnico_aceptado_id=None,
+        empresa_cliente=SimpleNamespace(nombre="Transportes del Valle S.A.S."),
         fecha_aceptacion=None,
         fecha_inicio=None,
         fecha_finalizacion=None,
@@ -315,6 +317,126 @@ async def test_notificaciones_tecnico_incluyen_servicio(
     assert respuesta[0].id == NOTIFICACION_ID
     assert respuesta[0].estado == "ENVIADA"
     assert respuesta[0].servicio.id == SERVICIO_ID
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_permite_servicio_notificado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio()
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> ServicioDetalleTecnico | None:
+            assert servicio_id == SERVICIO_ID
+            assert tecnico_id == TECNICO_ID
+            return ServicioDetalleTecnico(
+                servicio=servicio,
+                latitud=3.4516,
+                longitud=-76.532,
+                distancia_metros=1200.0,
+                notificado=True,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+    assert respuesta is not None
+    assert respuesta.id == SERVICIO_ID
+    assert respuesta.codigo == "SV-66666666"
+    assert respuesta.tipo_servicio_nombre == "Mantenimiento"
+    assert respuesta.empresa_cliente_nombre == "Transportes del Valle S.A.S."
+    assert respuesta.latitud == 3.4516
+    assert respuesta.longitud == -76.532
+    assert respuesta.distancia_metros == 1200.0
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_permite_servicio_asignado_sin_notificacion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio(estado="ACEPTADO")
+    servicio.tecnico_aceptado_id = TECNICO_ID
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> ServicioDetalleTecnico:
+            return ServicioDetalleTecnico(
+                servicio=servicio,
+                latitud=3.4516,
+                longitud=-76.532,
+                distancia_metros=None,
+                notificado=False,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+    assert respuesta is not None
+    assert respuesta.estado == "ACEPTADO"
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_rechaza_servicio_no_autorizado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+    servicio = crear_servicio()
+    servicio.tecnico_aceptado_id = UUID("99999999-9999-9999-9999-999999999999")
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> ServicioDetalleTecnico:
+            return ServicioDetalleTecnico(
+                servicio=servicio,
+                latitud=3.4516,
+                longitud=-76.532,
+                distancia_metros=None,
+                notificado=False,
+            )
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    with pytest.raises(PermissionError, match="acceso"):
+        await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+
+@pytest.mark.asyncio
+async def test_detalle_servicio_tecnico_retorna_none_si_no_existe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_detalle_para_tecnico(
+            self, servicio_id: UUID, tecnico_id: UUID
+        ) -> None:
+            return None
+
+    monkeypatch.setattr(tecnico_modulo, "ServicioRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).obtener_detalle_servicio(tecnico, SERVICIO_ID)
+
+    assert respuesta is None
 
 
 @pytest.mark.asyncio

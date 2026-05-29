@@ -3,18 +3,28 @@ from typing import NamedTuple
 from uuid import UUID
 
 from geoalchemy2 import Geometry
-from sqlalchemy import Select, cast, func, select
+from sqlalchemy import Select, cast, exists, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.modelos.notificacion_servicio import NotificacionServicio
 from app.modelos.servicio import Servicio
+from app.modelos.tecnico import Tecnico
 
 
 class ServicioConUbicacion(NamedTuple):
     servicio: Servicio
     latitud: float
     longitud: float
+
+
+class ServicioDetalleTecnico(NamedTuple):
+    servicio: Servicio
+    latitud: float
+    longitud: float
+    distancia_metros: float | None
+    notificado: bool
 
 
 class ServicioRepositorio:
@@ -80,6 +90,31 @@ class ServicioRepositorio:
         stmt = self._select_con_ubicacion().where(Servicio.id == servicio_id)
         row = (await self.session.execute(stmt)).one_or_none()
         return ServicioConUbicacion(*row) if row else None
+
+    async def obtener_detalle_para_tecnico(
+        self, servicio_id: UUID, tecnico_id: UUID
+    ) -> ServicioDetalleTecnico | None:
+        ubicacion_geometry = cast(Servicio.ubicacion, Geometry)
+        notificado = exists(
+            select(NotificacionServicio.id)
+            .where(NotificacionServicio.servicio_id == Servicio.id)
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+        )
+        distancia = func.ST_Distance(Servicio.ubicacion, Tecnico.ubicacion_actual)
+        stmt = (
+            select(
+                Servicio,
+                func.ST_Y(ubicacion_geometry).label("latitud"),
+                func.ST_X(ubicacion_geometry).label("longitud"),
+                distancia.label("distancia_metros"),
+                notificado.label("notificado"),
+            )
+            .join(Tecnico, Tecnico.id == tecnico_id)
+            .options(selectinload(Servicio.empresa_cliente))
+            .where(Servicio.id == servicio_id)
+        )
+        row = (await self.session.execute(stmt)).one_or_none()
+        return ServicioDetalleTecnico(*row) if row else None
 
     async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> Servicio | None:
         stmt = select(Servicio).where(Servicio.id == servicio_id).with_for_update()

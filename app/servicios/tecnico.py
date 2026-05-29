@@ -10,12 +10,14 @@ from app.repositorios.notificacion_servicio import (
     NotificacionServicioConUbicacion,
     NotificacionServicioRepositorio,
 )
+from app.repositorios.servicio import ServicioDetalleTecnico, ServicioRepositorio
 from app.repositorios.tecnico import TecnicoConUbicacion, TecnicoRepositorio
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
+    ServicioDetalleTecnicoLeer,
     TecnicoActualizar,
     TecnicoCercanoLeer,
     TecnicoLeer,
@@ -27,6 +29,7 @@ class TecnicoServicio:
     def __init__(self, session: AsyncSession) -> None:
         self.tecnicos = TecnicoRepositorio(session)
         self.notificaciones = NotificacionServicioRepositorio(session)
+        self.servicios = ServicioRepositorio(session)
 
     async def obtener_yo(self, tecnico: Tecnico) -> TecnicoLeer:
         tecnico_con_ubicacion = await self.tecnicos.obtener_por_id(tecnico.id)
@@ -135,6 +138,19 @@ class TecnicoServicio:
             for notificacion in notificaciones
         ]
 
+    async def obtener_detalle_servicio(
+        self, tecnico: Tecnico, servicio_id: UUID
+    ) -> ServicioDetalleTecnicoLeer | None:
+        detalle = await self.servicios.obtener_detalle_para_tecnico(servicio_id, tecnico.id)
+        if detalle is None:
+            return None
+
+        servicio = detalle.servicio
+        if not detalle.notificado and servicio.tecnico_aceptado_id != tecnico.id:
+            raise PermissionError("El tecnico no tiene acceso a este servicio")
+
+        return self._serializar_detalle_servicio(detalle)
+
     async def obtener_metricas_rendimiento(
         self, tecnico_id: UUID
     ) -> MetricasRendimientoTecnicoLeer | None:
@@ -198,3 +214,42 @@ class TecnicoServicio:
             fecha_creacion=servicio.fecha_creacion,
             fecha_actualizacion=servicio.fecha_actualizacion,
         )
+
+    @classmethod
+    def _serializar_detalle_servicio(
+        cls, detalle: ServicioDetalleTecnico
+    ) -> ServicioDetalleTecnicoLeer:
+        servicio = detalle.servicio
+        empresa = servicio.empresa_cliente
+        return ServicioDetalleTecnicoLeer(
+            id=servicio.id,
+            codigo=cls._codigo_servicio(servicio.id),
+            tipo_servicio=servicio.tipo_servicio,
+            tipo_servicio_nombre=cls._nombre_tipo_servicio(servicio.tipo_servicio),
+            estado=servicio.estado,
+            placa_vehiculo=servicio.placa_vehiculo,
+            vehiculo_descripcion=(
+                f"Vehiculo placa {servicio.placa_vehiculo}"
+                if servicio.placa_vehiculo
+                else None
+            ),
+            empresa_cliente_id=servicio.empresa_cliente_id,
+            empresa_cliente_nombre=empresa.nombre,
+            latitud=detalle.latitud,
+            longitud=detalle.longitud,
+            direccion=servicio.direccion,
+            fecha_programada=servicio.fecha_programada,
+            distancia_metros=detalle.distancia_metros,
+        )
+
+    @staticmethod
+    def _codigo_servicio(servicio_id: UUID) -> str:
+        return f"SV-{str(servicio_id).split('-')[0].upper()}"
+
+    @staticmethod
+    def _nombre_tipo_servicio(tipo_servicio: int) -> str:
+        return {
+            1: "Mantenimiento",
+            2: "Diagnostico",
+            3: "Soporte vial",
+        }.get(tipo_servicio, f"Tipo {tipo_servicio}")

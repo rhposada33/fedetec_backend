@@ -1,6 +1,7 @@
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.deps import SesionDep, TecnicoActualDep, UsuarioActualDep
 from app.schemas.servicio import ServicioLeer
@@ -8,6 +9,7 @@ from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
+    ServicioDetalleTecnicoLeer,
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
@@ -56,6 +58,27 @@ async def listar_notificaciones_tecnico_actual(
     session: SesionDep, tecnico_actual: TecnicoActualDep
 ) -> list[NotificacionServicioTecnicoLeer]:
     return await TecnicoServicio(session).listar_notificaciones(tecnico_actual)
+
+
+@router.get("/yo/servicios/{servicio_id}", response_model=ServicioDetalleTecnicoLeer)
+async def obtener_detalle_servicio_tecnico_actual(
+    servicio_id: UUID,
+    session: SesionDep,
+    tecnico_actual: TecnicoActualDep,
+) -> ServicioDetalleTecnicoLeer:
+    try:
+        servicio = await TecnicoServicio(session).obtener_detalle_servicio(
+            tecnico_actual, servicio_id
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    if servicio is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return servicio
 
 
 @router.get("/yo/metricas", response_model=MetricasRendimientoTecnicoLeer)

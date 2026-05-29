@@ -75,3 +75,20 @@ class NotificacionServicioTecnicoLeer(BaseModel):
     fecha_envio: datetime
     fecha_lectura: datetime | None = None
     servicio: ServicioLeer
+
+
+class ServicioDetalleTecnicoLeer(BaseModel):
+    id: UUID
+    codigo: str
+    tipo_servicio: int
+    tipo_servicio_nombre: str
+    estado: str
+    placa_vehiculo: str | None = None
+    vehiculo_descripcion: str | None = None
+    empresa_cliente_id: UUID
+    empresa_cliente_nombre: str
+    latitud: float
+    longitud: float
+    direccion: str | None = None
+    fecha_programada: datetime
+    distancia_metros: float | None = None
