@@ -5,6 +5,7 @@ from uuid import UUID
 
 import pytest
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.exc import IntegrityError
 
 os.environ["DEBUG"] = "false"
 os.environ["SECRET_KEY"] = "clave-local-para-pruebas-con-longitud-segura"
@@ -16,7 +17,11 @@ from app.repositorios.tecnico import (
     TecnicoConUbicacion,
     TecnicoRepositorio,
 )
-from app.schemas.tecnico import DisponibilidadTecnicoActualizar, UbicacionTecnicoActualizar
+from app.schemas.tecnico import (
+    DisponibilidadTecnicoActualizar,
+    TecnicoActualizar,
+    UbicacionTecnicoActualizar,
+)
 from app.servicios import tecnico as tecnico_modulo
 from app.servicios.tecnico import TecnicoServicio
 
@@ -36,6 +41,15 @@ def crear_tecnico(esta_disponible: bool = True) -> SimpleNamespace:
             nombre_completo="Tecnico Demo",
             correo="tecnico@example.com",
             telefono="3001234567",
+            numero_documento=None,
+            ciudad=None,
+            municipio=None,
+            direccion=None,
+            eps=None,
+            arl=None,
+            tiene_vehiculo=False,
+            placa_vehiculo=None,
+            esta_activo=True,
         ),
         ubicacion_actual=None,
         esta_disponible=esta_disponible,
@@ -131,6 +145,81 @@ async def test_actualizar_disponibilidad_persiste_estado(
 
     assert RepositorioFake.disponibilidad_guardada is False
     assert respuesta.esta_disponible is False
+
+
+@pytest.mark.asyncio
+async def test_actualizar_tecnico_admin_actualiza_usuario_disponibilidad_y_gps(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+
+    class RepositorioFake:
+        ubicacion_guardada: str | None = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def guardar(self, tecnico_actualizado: SimpleNamespace) -> SimpleNamespace:
+            self.__class__.ubicacion_guardada = tecnico_actualizado.ubicacion_actual.desc
+            return tecnico_actualizado
+
+        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion | None:
+            return TecnicoConUbicacion(tecnico, 4.72, -74.08)
+
+    monkeypatch.setattr(tecnico_modulo, "TecnicoRepositorio", RepositorioFake)
+
+    respuesta = await TecnicoServicio(object()).actualizar_admin(
+        TECNICO_ID,
+        TecnicoActualizar(
+            nombre_completo="Tecnico Actualizado",
+            correo="nuevo@example.com",
+            telefono="3007654321",
+            ciudad="Bogota",
+            esta_disponible=False,
+            latitud=4.72,
+            longitud=-74.08,
+        ),
+    )
+
+    assert respuesta is not None
+    assert respuesta.nombre_completo == "Tecnico Actualizado"
+    assert respuesta.correo == "nuevo@example.com"
+    assert respuesta.telefono == "3007654321"
+    assert respuesta.ciudad == "Bogota"
+    assert respuesta.esta_disponible is False
+    assert RepositorioFake.ubicacion_guardada == "POINT(-74.08 4.72)"
+
+
+@pytest.mark.asyncio
+async def test_actualizar_tecnico_admin_rechaza_correo_duplicado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    tecnico = crear_tecnico()
+
+    class SessionFake:
+        rollbacks = 0
+
+        async def rollback(self) -> None:
+            self.__class__.rollbacks += 1
+
+    class RepositorioFake:
+        def __init__(self, session: SessionFake) -> None:
+            self.session = session
+
+        async def guardar(self, tecnico_actualizado: SimpleNamespace) -> SimpleNamespace:
+            raise IntegrityError("insert", {}, Exception("duplicate"))
+
+        async def obtener_por_id(self, tecnico_id: UUID) -> TecnicoConUbicacion | None:
+            return TecnicoConUbicacion(tecnico, None, None)
+
+    monkeypatch.setattr(tecnico_modulo, "TecnicoRepositorio", RepositorioFake)
+
+    with pytest.raises(ValueError, match="correo"):
+        await TecnicoServicio(SessionFake()).actualizar_admin(
+            TECNICO_ID, TecnicoActualizar(correo="duplicado@example.com")
+        )
+
+    assert SessionFake.rollbacks == 1
 
 
 @pytest.mark.asyncio

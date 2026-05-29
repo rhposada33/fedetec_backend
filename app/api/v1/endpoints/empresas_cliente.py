@@ -53,7 +53,10 @@ async def actualizar_empresa_cliente(
     session: SesionDep,
     _admin: AdminDep,
 ) -> EmpresaClienteLeer:
-    empresa = await EmpresaClienteServicio(session).actualizar(empresa_id, empresa_in)
+    try:
+        empresa = await EmpresaClienteServicio(session).actualizar(empresa_id, empresa_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
     if empresa is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

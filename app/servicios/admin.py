@@ -18,7 +18,11 @@ from app.schemas.admin import (
 from app.schemas.empresa_cliente import EmpresaClienteLeer
 from app.schemas.evidencia_servicio import EvidenciaServicioLeer
 from app.schemas.servicio import ServicioLeer
-from app.schemas.tecnico import MetricasRendimientoTecnicoLeer, TecnicoLeer
+from app.schemas.tecnico import (
+    MetricasRendimientoTecnicoLeer,
+    TecnicoActualizar,
+    TecnicoLeer,
+)
 from app.servicios.evidencia_servicio import CONFIG_APROBACION_EVIDENCIAS
 from app.servicios.servicio import ServicioServicio
 from app.servicios.tecnico import TecnicoServicio
@@ -69,6 +73,11 @@ class AdminServicio:
     async def listar_tecnicos(self, esta_disponible: bool | None = None) -> list[TecnicoLeer]:
         tecnicos = await self.tecnicos.listar_admin(esta_disponible)
         return [TecnicoServicio._serializar(tecnico) for tecnico in tecnicos]
+
+    async def actualizar_tecnico(
+        self, tecnico_id: UUID, tecnico_in: TecnicoActualizar
+    ) -> TecnicoLeer | None:
+        return await TecnicoServicio(self.session).actualizar_admin(tecnico_id, tecnico_in)
 
     async def obtener_metricas_tecnico(
         self, tecnico_id: UUID

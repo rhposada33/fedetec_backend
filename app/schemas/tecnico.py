@@ -15,12 +15,39 @@ class DisponibilidadTecnicoActualizar(BaseModel):
     esta_disponible: bool
 
 
+class TecnicoActualizar(BaseModel):
+    nombre_completo: str | None = Field(default=None, min_length=1, max_length=150)
+    correo: str | None = Field(default=None, max_length=150)
+    telefono: str | None = Field(default=None, max_length=50)
+    numero_documento: str | None = Field(default=None, max_length=50)
+    ciudad: str | None = Field(default=None, max_length=100)
+    municipio: str | None = Field(default=None, max_length=100)
+    direccion: str | None = None
+    eps: str | None = Field(default=None, max_length=100)
+    arl: str | None = Field(default=None, max_length=100)
+    tiene_vehiculo: bool | None = None
+    placa_vehiculo: str | None = Field(default=None, max_length=30)
+    esta_activo: bool | None = None
+    esta_disponible: bool | None = None
+    latitud: float | None = Field(default=None, ge=-90, le=90)
+    longitud: float | None = Field(default=None, ge=-180, le=180)
+
+
 class TecnicoLeer(BaseModel):
     id: UUID
     usuario_id: UUID
     nombre_completo: str
     correo: str
     telefono: str | None = None
+    numero_documento: str | None = None
+    ciudad: str | None = None
+    municipio: str | None = None
+    direccion: str | None = None
+    eps: str | None = None
+    arl: str | None = None
+    tiene_vehiculo: bool
+    placa_vehiculo: str | None = None
+    esta_activo: bool
     esta_disponible: bool
     latitud: float | None = None
     longitud: float | None = None

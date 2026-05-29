@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from geoalchemy2.elements import WKTElement
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.tecnico import Tecnico
@@ -15,6 +16,7 @@ from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
+    TecnicoActualizar,
     TecnicoCercanoLeer,
     TecnicoLeer,
     UbicacionTecnicoActualizar,
@@ -48,6 +50,55 @@ class TecnicoServicio:
         tecnico.esta_disponible = disponibilidad_in.esta_disponible
         await self.tecnicos.guardar(tecnico)
         return await self.obtener_yo(tecnico)
+
+    async def actualizar_admin(
+        self, tecnico_id: UUID, tecnico_in: TecnicoActualizar
+    ) -> TecnicoLeer | None:
+        tecnico_con_ubicacion = await self.tecnicos.obtener_por_id(tecnico_id)
+        if tecnico_con_ubicacion is None:
+            return None
+
+        tecnico = tecnico_con_ubicacion.tecnico
+        usuario = tecnico.usuario
+        datos = tecnico_in.model_dump(exclude_unset=True)
+        for campo in [
+            "nombre_completo",
+            "correo",
+            "telefono",
+            "numero_documento",
+            "ciudad",
+            "municipio",
+            "direccion",
+            "eps",
+            "arl",
+            "tiene_vehiculo",
+            "placa_vehiculo",
+            "esta_activo",
+        ]:
+            if campo in datos:
+                setattr(usuario, campo, datos[campo])
+
+        if "esta_disponible" in datos:
+            tecnico.esta_disponible = tecnico_in.esta_disponible
+
+        if "latitud" in datos or "longitud" in datos:
+            if tecnico_in.latitud is None or tecnico_in.longitud is None:
+                raise ValueError("latitud y longitud son requeridas para actualizar ubicacion")
+            tecnico.ubicacion_actual = WKTElement(
+                f"POINT({tecnico_in.longitud} {tecnico_in.latitud})", srid=4326
+            )
+            tecnico.fecha_ultima_ubicacion = datetime.now(UTC)
+
+        try:
+            await self.tecnicos.guardar(tecnico)
+        except IntegrityError as exc:
+            await self.tecnicos.session.rollback()
+            raise ValueError("Ya existe un usuario con ese correo") from exc
+
+        actualizado = await self.tecnicos.obtener_por_id(tecnico_id)
+        if actualizado is None:
+            raise RuntimeError("No fue posible recuperar el tecnico actualizado")
+        return self._serializar(actualizado)
 
     async def buscar_cercanos(
         self, latitud: float, longitud: float, radio_metros: int
@@ -108,6 +159,15 @@ class TecnicoServicio:
             nombre_completo=tecnico.usuario.nombre_completo,
             correo=tecnico.usuario.correo,
             telefono=tecnico.usuario.telefono,
+            numero_documento=tecnico.usuario.numero_documento,
+            ciudad=tecnico.usuario.ciudad,
+            municipio=tecnico.usuario.municipio,
+            direccion=tecnico.usuario.direccion,
+            eps=tecnico.usuario.eps,
+            arl=tecnico.usuario.arl,
+            tiene_vehiculo=tecnico.usuario.tiene_vehiculo,
+            placa_vehiculo=tecnico.usuario.placa_vehiculo,
+            esta_activo=tecnico.usuario.esta_activo,
             esta_disponible=tecnico.esta_disponible,
             latitud=tecnico_con_ubicacion.latitud,
             longitud=tecnico_con_ubicacion.longitud,

@@ -15,6 +15,9 @@ from app.api.deps import get_db, requerir_admin
 from app.api.v1.endpoints import empresas_cliente
 from app.core.security import generar_api_key, generar_api_key_hash, verificar_api_key
 from app.main import app
+from app.schemas.empresa_cliente import EmpresaClienteActualizar
+from app.servicios import empresa_cliente as empresa_modulo
+from app.servicios.empresa_cliente import EmpresaClienteServicio
 
 client = TestClient(app)
 EMPRESA_ID = UUID("11111111-1111-1111-1111-111111111111")
@@ -123,3 +126,63 @@ def test_endpoints_empresas_cliente_no_exponen_api_key(
 
     assert actualizar_response.status_code == 200
     assert "api_key" not in actualizar_response.json()
+
+
+@pytest.mark.asyncio
+async def test_actualizar_empresa_cliente_sincroniza_usuario_vinculado(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    usuario_id = UUID("22222222-2222-2222-2222-222222222222")
+    usuario = SimpleNamespace(
+        id=usuario_id,
+        nombre_completo="Cliente Viejo",
+        correo="viejo@example.com",
+        telefono="3000000000",
+        esta_activo=True,
+    )
+    empresa = SimpleNamespace(
+        id=EMPRESA_ID,
+        usuario_id=usuario_id,
+        nombre="Cliente Viejo",
+        identificacion_tributaria="900",
+        correo_contacto="viejo@example.com",
+        telefono_contacto="3000000000",
+        esta_activa=True,
+        fecha_creacion=FECHA_CREACION,
+    )
+
+    class SessionFake:
+        async def get(self, modelo: object, item_id: UUID) -> SimpleNamespace | None:
+            return usuario if item_id == usuario_id else None
+
+    class RepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, empresa_id: UUID) -> SimpleNamespace | None:
+            return empresa if empresa_id == EMPRESA_ID else None
+
+        async def guardar(self, empresa_guardada: SimpleNamespace) -> SimpleNamespace:
+            return empresa_guardada
+
+    monkeypatch.setattr(empresa_modulo, "EmpresaClienteRepositorio", RepositorioFake)
+
+    respuesta = await EmpresaClienteServicio(SessionFake()).actualizar(
+        EMPRESA_ID,
+        EmpresaClienteActualizar(
+            nombre="Cliente Nuevo",
+            correo_contacto="nuevo@example.com",
+            telefono_contacto="3111111111",
+            esta_activa=False,
+        ),
+    )
+
+    assert respuesta is empresa
+    assert empresa.nombre == "Cliente Nuevo"
+    assert empresa.correo_contacto == "nuevo@example.com"
+    assert empresa.telefono_contacto == "3111111111"
+    assert empresa.esta_activa is False
+    assert usuario.nombre_completo == "Cliente Nuevo"
+    assert usuario.correo == "nuevo@example.com"
+    assert usuario.telefono == "3111111111"
+    assert usuario.esta_activo is False

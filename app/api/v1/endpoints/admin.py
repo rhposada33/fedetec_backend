@@ -8,7 +8,7 @@ from app.schemas.admin import ConfiguracionActualizar, ConfiguracionLeer, Dashbo
 from app.schemas.empresa_cliente import EmpresaClienteLeer
 from app.schemas.evidencia_servicio import EvidenciaServicioLeer
 from app.schemas.servicio import ServicioLeer
-from app.schemas.tecnico import MetricasRendimientoTecnicoLeer, TecnicoLeer
+from app.schemas.tecnico import MetricasRendimientoTecnicoLeer, TecnicoActualizar, TecnicoLeer
 from app.servicios.admin import AdminServicio
 
 router = APIRouter()
@@ -66,6 +66,26 @@ async def obtener_metricas_tecnico_admin(
             detail="Tecnico no encontrado",
         )
     return metricas
+
+
+@router.patch("/tecnicos/{tecnico_id}", response_model=TecnicoLeer)
+async def actualizar_tecnico_admin(
+    tecnico_id: UUID,
+    tecnico_in: TecnicoActualizar,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> TecnicoLeer:
+    try:
+        tecnico = await AdminServicio(session).actualizar_tecnico(tecnico_id, tecnico_in)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if tecnico is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tecnico no encontrado",
+        )
+    return tecnico
 
 
 @router.get("/empresas-cliente", response_model=list[EmpresaClienteLeer])

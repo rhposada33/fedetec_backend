@@ -78,7 +78,23 @@ class EmpresaClienteServicio:
         for campo, valor in datos.items():
             setattr(empresa, campo, valor)
 
-        return await self.empresas.guardar(empresa)
+        if empresa.usuario_id is not None:
+            usuario = await self.session.get(Usuario, empresa.usuario_id)
+            if usuario is not None:
+                if "nombre" in datos:
+                    usuario.nombre_completo = empresa.nombre
+                if "correo_contacto" in datos and datos["correo_contacto"] is not None:
+                    usuario.correo = datos["correo_contacto"]
+                if "telefono_contacto" in datos:
+                    usuario.telefono = empresa.telefono_contacto
+                if "esta_activa" in datos:
+                    usuario.esta_activo = empresa.esta_activa
+
+        try:
+            return await self.empresas.guardar(empresa)
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise ValueError("No fue posible actualizar la empresa cliente") from exc
 
     async def _obtener_rol_empresa(self) -> Rol:
         rol = await self.session.scalar(select(Rol).where(Rol.nombre == ROL_EMPRESA_CLIENTE))
