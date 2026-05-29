@@ -1,3 +1,4 @@
+from app.modelos.calificacion_servicio import CalificacionServicio
 from app.modelos.configuracion_app import ConfiguracionApp
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.evidencia_servicio import EvidenciaServicio
@@ -14,6 +15,7 @@ from app.modelos.usuario_rol import UsuarioRol
 
 __all__ = [
     "ConfiguracionApp",
+    "CalificacionServicio",
     "EmpresaCliente",
     "EvidenciaServicio",
     "NotificacionServicio",

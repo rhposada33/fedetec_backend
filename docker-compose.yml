@@ -33,6 +33,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fedetec}:${POSTGRES_PASSWORD:-fedetec}@postgres:5432/${POSTGRES_DB:-fedetec}
       BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173,http://localhost:8080,http://localhost:8081}
+      BACKEND_CORS_ORIGIN_REGEX: ${BACKEND_CORS_ORIGIN_REGEX:-https://.*\.ngrok-free\.app}
       POSTGRES_DB: ${POSTGRES_DB:-fedetec}
       POSTGRES_USER: ${POSTGRES_USER:-fedetec}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fedetec}

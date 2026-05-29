@@ -5,6 +5,7 @@ from fastapi import APIRouter, Header, HTTPException, Query, status
 
 from app.api.deps import (
     AdminDep,
+    EmpresaClienteActualDep,
     SesionDep,
     TecnicoActualDep,
     UsuarioActualDep,
@@ -12,8 +13,10 @@ from app.api.deps import (
     usuario_es_empresa_cliente,
 )
 from app.modelos.empresa_cliente import EmpresaCliente
+from app.repositorios.calificacion_servicio import CalificacionDuplicadaError
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError
+from app.schemas.calificacion_servicio import CalificacionServicioCrear, CalificacionServicioLeer
 from app.schemas.evidencia_servicio import EvidenciaServicioCrear, EvidenciaServicioLeer
 from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
@@ -25,6 +28,7 @@ from app.schemas.servicio import (
     ServicioRechazar,
     ServicioReprogramar,
 )
+from app.servicios.calificacion_servicio import CalificacionServicioServicio
 from app.servicios.evidencia_servicio import EvidenciaServicioServicio
 from app.servicios.reporte_pago import ReportePagoServicio
 from app.servicios.servicio import ServicioServicio
@@ -84,6 +88,57 @@ async def obtener_servicio(
             detail="Servicio no encontrado",
         )
     return servicio
+
+
+@router.post(
+    "/{servicio_id}/calificaciones",
+    response_model=CalificacionServicioLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+async def crear_calificacion_servicio(
+    servicio_id: UUID,
+    calificacion_in: CalificacionServicioCrear,
+    session: SesionDep,
+    empresa_cliente: EmpresaClienteActualDep,
+) -> CalificacionServicioLeer:
+    try:
+        calificacion = await CalificacionServicioServicio(session).crear(
+            servicio_id, empresa_cliente, calificacion_in
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except CalificacionDuplicadaError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if calificacion is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return calificacion
+
+
+@router.get("/{servicio_id}/calificaciones", response_model=CalificacionServicioLeer)
+async def obtener_calificacion_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    empresa_cliente: EmpresaClienteActualDep,
+) -> CalificacionServicioLeer:
+    try:
+        calificacion = await CalificacionServicioServicio(session).obtener(
+            servicio_id, empresa_cliente
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    if calificacion is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Calificacion no encontrada",
+        )
+    return calificacion
 
 
 async def _resolver_empresa_para_crear_servicio(

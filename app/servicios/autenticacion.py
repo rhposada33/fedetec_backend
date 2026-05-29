@@ -91,17 +91,22 @@ class AutenticacionServicio:
 
     @staticmethod
     def _serializar_usuario_autenticado(
-        usuario: Usuario, roles: list[str] | None = None, tecnico_id: UUID | None = None
+        usuario: Usuario,
+        roles: list[str] | None = None,
+        tecnico_id: UUID | None = None,
+        empresa_cliente_id: UUID | None = None,
     ) -> UsuarioAutenticadoLeer:
         nombres_roles = roles or [usuario_rol.rol.nombre for usuario_rol in usuario.roles]
-        id_tecnico = tecnico_id or (usuario.tecnico.id if usuario.tecnico is not None else None)
-        empresa_cliente_id = (
-            usuario.empresa_cliente.id if usuario.empresa_cliente is not None else None
+        tecnico = usuario.__dict__.get("tecnico")
+        empresa_cliente = usuario.__dict__.get("empresa_cliente")
+        id_tecnico = tecnico_id or (tecnico.id if tecnico is not None else None)
+        id_empresa_cliente = empresa_cliente_id or (
+            empresa_cliente.id if empresa_cliente is not None else None
         )
         return UsuarioAutenticadoLeer(
             id=usuario.id,
             tecnico_id=id_tecnico,
-            empresa_cliente_id=empresa_cliente_id,
+            empresa_cliente_id=id_empresa_cliente,
             correo=usuario.correo,
             nombre_completo=usuario.nombre_completo,
             telefono=usuario.telefono,

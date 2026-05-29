@@ -12,6 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.modelos.calificacion_servicio import CalificacionServicio
     from app.modelos.notificacion_servicio import NotificacionServicio
     from app.modelos.rechazo_servicio import RechazoServicio
     from app.modelos.reporte_pago import ReportePago
@@ -47,3 +48,4 @@ class Tecnico(Base):
     rechazos: Mapped[list[RechazoServicio]] = relationship(back_populates="tecnico")
     reprogramaciones: Mapped[list[ReprogramacionServicio]] = relationship(back_populates="tecnico")
     reportes_pago: Mapped[list[ReportePago]] = relationship(back_populates="tecnico")
+    calificaciones: Mapped[list[CalificacionServicio]] = relationship(back_populates="tecnico")

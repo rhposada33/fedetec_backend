@@ -11,6 +11,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 if TYPE_CHECKING:
+    from app.modelos.calificacion_servicio import CalificacionServicio
     from app.modelos.reporte_pago import ReportePago
     from app.modelos.servicio import Servicio
     from app.modelos.usuario import Usuario
@@ -37,4 +38,7 @@ class EmpresaCliente(Base):
 
     servicios: Mapped[list[Servicio]] = relationship(back_populates="empresa_cliente")
     reportes_pago: Mapped[list[ReportePago]] = relationship(back_populates="empresa_cliente")
+    calificaciones: Mapped[list[CalificacionServicio]] = relationship(
+        back_populates="empresa_cliente"
+    )
     usuario: Mapped[Usuario | None] = relationship(back_populates="empresa_cliente")

@@ -371,6 +371,34 @@ def upgrade() -> None:
     op.create_index("ix_sedes_nombre", "sedes", ["nombre"], unique=True)
     op.create_index("idx_sedes_ubicacion", "sedes", ["ubicacion"], postgresql_using="gist")
 
+    op.create_table(
+        "calificaciones_servicio",
+        columna_uuid_pk(),
+        sa.Column("servicio_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("empresa_cliente_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("tecnico_id", postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column("puntuacion", sa.Integer(), nullable=False),
+        sa.Column("comentario", sa.Text(), nullable=True),
+        sa.Column(
+            "fecha_calificacion",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "fecha_creacion",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.CheckConstraint("puntuacion BETWEEN 1 AND 5", name="ck_calificaciones_puntuacion"),
+        sa.ForeignKeyConstraint(["empresa_cliente_id"], ["empresas_cliente.id"]),
+        sa.ForeignKeyConstraint(["servicio_id"], ["servicios.id"]),
+        sa.ForeignKeyConstraint(["tecnico_id"], ["tecnicos.id"]),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint("servicio_id", name="uq_calificaciones_servicio_id"),
+    )
+
     op.bulk_insert(
         sa.table("roles", sa.column("id", sa.Integer), sa.column("nombre", sa.String)),
         [
@@ -395,6 +423,7 @@ def downgrade() -> None:
     op.drop_index("idx_sedes_ubicacion", table_name="sedes", postgresql_using="gist")
     op.drop_index("ix_sedes_nombre", table_name="sedes")
     op.drop_table("sedes")
+    op.drop_table("calificaciones_servicio")
     op.drop_table("reportes_pago")
     op.drop_table("evidencias_servicio")
     op.drop_table("reprogramaciones_servicio")
