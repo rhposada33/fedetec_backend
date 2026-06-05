@@ -20,6 +20,13 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columnas = {columna["name"] for columna in inspector.get_columns("empresas_cliente")}
+
+    if "usuario_id" in columnas:
+        return
+
     op.add_column(
         "empresas_cliente",
         sa.Column("usuario_id", postgresql.UUID(as_uuid=True), nullable=True),

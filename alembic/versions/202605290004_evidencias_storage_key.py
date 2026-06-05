@@ -19,6 +19,13 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columnas = {columna["name"] for columna in inspector.get_columns("evidencias_servicio")}
+
+    if "storage_key" in columnas:
+        return
+
     op.add_column("evidencias_servicio", sa.Column("storage_key", sa.Text(), nullable=True))
 
 
