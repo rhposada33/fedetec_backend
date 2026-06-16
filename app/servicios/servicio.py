@@ -13,6 +13,7 @@ from app.repositorios.rechazo_servicio import RechazoServicioRepositorio
 from app.repositorios.reprogramacion_servicio import ReprogramacionServicioRepositorio
 from app.repositorios.servicio import ServicioConUbicacion, ServicioRepositorio
 from app.repositorios.tecnico import TecnicoRepositorio
+from app.repositorios.tipo_servicio import TipoServicioRepositorio
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
@@ -32,6 +33,7 @@ class ServicioServicio:
         self.session = session
         self.servicios = ServicioRepositorio(session)
         self.tecnicos = TecnicoRepositorio(session)
+        self.tipos_servicio = TipoServicioRepositorio(session)
         self.notificaciones = NotificacionServicioRepositorio(session)
         self.rechazos = RechazoServicioRepositorio(session)
         self.reprogramaciones = ReprogramacionServicioRepositorio(session)
@@ -42,9 +44,15 @@ class ServicioServicio:
         empresa_cliente: EmpresaCliente,
         clave_idempotencia: str,
     ) -> ServicioLeer:
+        tipo_servicio = await self.tipos_servicio.obtener_por_id(servicio_in.tipo_servicio)
+        if tipo_servicio is None or not tipo_servicio.esta_activo:
+            raise ValueError("Tipo de servicio no encontrado o inactivo")
+
         servicio = Servicio(
             empresa_cliente_id=empresa_cliente.id,
-            tipo_servicio=servicio_in.tipo_servicio,
+            tipo_servicio=tipo_servicio.id,
+            tipo_servicio_nombre=tipo_servicio.nombre,
+            valor_servicio=tipo_servicio.valor,
             placa_vehiculo=servicio_in.placa_vehiculo,
             ubicacion=WKTElement(
                 f"POINT({servicio_in.longitud} {servicio_in.latitud})", srid=4326
@@ -107,7 +115,12 @@ class ServicioServicio:
                 raise ValueError("Empresa cliente no encontrada")
             servicio.empresa_cliente_id = empresa_cliente.id
         if "tipo_servicio" in datos:
-            servicio.tipo_servicio = servicio_in.tipo_servicio
+            tipo_servicio = await self.tipos_servicio.obtener_por_id(servicio_in.tipo_servicio)
+            if tipo_servicio is None or not tipo_servicio.esta_activo:
+                raise ValueError("Tipo de servicio no encontrado o inactivo")
+            servicio.tipo_servicio = tipo_servicio.id
+            servicio.tipo_servicio_nombre = tipo_servicio.nombre
+            servicio.valor_servicio = tipo_servicio.valor
         if "placa_vehiculo" in datos:
             servicio.placa_vehiculo = servicio_in.placa_vehiculo
         if "direccion" in datos:
@@ -315,6 +328,12 @@ class ServicioServicio:
             id=servicio.id,
             empresa_cliente_id=servicio.empresa_cliente_id,
             tipo_servicio=servicio.tipo_servicio,
+            tipo_servicio_nombre=getattr(
+                servicio,
+                "tipo_servicio_nombre",
+                ServicioServicio._nombre_tipo_servicio_legacy(servicio.tipo_servicio),
+            ),
+            valor_servicio=getattr(servicio, "valor_servicio", 0),
             placa_vehiculo=servicio.placa_vehiculo,
             latitud=servicio_con_ubicacion.latitud,
             longitud=servicio_con_ubicacion.longitud,
@@ -330,6 +349,14 @@ class ServicioServicio:
             fecha_creacion=servicio.fecha_creacion,
             fecha_actualizacion=servicio.fecha_actualizacion,
         )
+
+    @staticmethod
+    def _nombre_tipo_servicio_legacy(tipo_servicio: int) -> str:
+        return {
+            1: "Mantenimiento",
+            2: "Diagnostico",
+            3: "Soporte vial",
+        }.get(tipo_servicio, f"Tipo {tipo_servicio}")
 
     @staticmethod
     def _validar_tecnico_asignado(servicio: Servicio, tecnico: Tecnico) -> None:

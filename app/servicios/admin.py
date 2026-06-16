@@ -3,11 +3,13 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.modelos.tipo_servicio import TipoServicio
 from app.repositorios.configuracion_app import ConfiguracionAppRepositorio
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.evidencia_servicio import EvidenciaServicioRepositorio
 from app.repositorios.servicio import ServicioRepositorio
 from app.repositorios.tecnico import TecnicoRepositorio
+from app.repositorios.tipo_servicio import TipoServicioRepositorio
 from app.schemas.admin import (
     ConfiguracionActualizar,
     ConfiguracionAprobacionEvidenciasLeer,
@@ -23,6 +25,11 @@ from app.schemas.tecnico import (
     TecnicoActualizar,
     TecnicoLeer,
 )
+from app.schemas.tipo_servicio import (
+    TipoServicioActualizar,
+    TipoServicioCrear,
+    TipoServicioLeer,
+)
 from app.servicios.evidencia_servicio import CONFIG_APROBACION_EVIDENCIAS
 from app.servicios.servicio import ServicioServicio
 from app.servicios.tecnico import TecnicoServicio
@@ -36,6 +43,7 @@ class AdminServicio:
         self.evidencias = EvidenciaServicioRepositorio(session)
         self.servicios = ServicioRepositorio(session)
         self.tecnicos = TecnicoRepositorio(session)
+        self.tipos_servicio = TipoServicioRepositorio(session)
 
     async def dashboard(
         self,
@@ -113,3 +121,34 @@ class AdminServicio:
             ),
             fecha_actualizacion=configuracion.fecha_actualizacion,
         )
+
+    async def listar_tipos_servicio(self, solo_activos: bool = False) -> list[TipoServicioLeer]:
+        tipos = await self.tipos_servicio.listar(solo_activos)
+        return [TipoServicioLeer.model_validate(tipo) for tipo in tipos]
+
+    async def crear_tipo_servicio(self, tipo_in: TipoServicioCrear) -> TipoServicioLeer:
+        tipo = TipoServicio(**tipo_in.model_dump())
+        creado = await self.tipos_servicio.crear(tipo)
+        return TipoServicioLeer.model_validate(creado)
+
+    async def actualizar_tipo_servicio(
+        self, tipo_servicio_id: int, tipo_in: TipoServicioActualizar
+    ) -> TipoServicioLeer | None:
+        tipo = await self.tipos_servicio.obtener_por_id(tipo_servicio_id)
+        if tipo is None:
+            return None
+
+        datos = tipo_in.model_dump(exclude_unset=True)
+        for campo, valor in datos.items():
+            setattr(tipo, campo, valor)
+
+        actualizado = await self.tipos_servicio.guardar(tipo)
+        return TipoServicioLeer.model_validate(actualizado)
+
+    async def desactivar_tipo_servicio(self, tipo_servicio_id: int) -> TipoServicioLeer | None:
+        tipo = await self.tipos_servicio.obtener_por_id(tipo_servicio_id)
+        if tipo is None:
+            return None
+        tipo.esta_activo = False
+        actualizado = await self.tipos_servicio.guardar(tipo)
+        return TipoServicioLeer.model_validate(actualizado)

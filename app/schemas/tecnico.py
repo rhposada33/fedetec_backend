@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -102,6 +103,7 @@ class ServicioTecnicoResumenLeer(BaseModel):
     codigo: str
     tipo_servicio: int
     tipo_servicio_nombre: str
+    valor_servicio: Decimal
     estado: str
     placa_vehiculo: str | None = None
     latitud: float
@@ -119,6 +121,7 @@ class ServicioTecnicoDetalleLeer(BaseModel):
     codigo: str
     tipo_servicio: int
     tipo_servicio_nombre: str
+    valor_servicio: Decimal
     estado: str
     placa_vehiculo: str | None = None
     vehiculo_descripcion: str | None = None

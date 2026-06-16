@@ -34,7 +34,11 @@ class ReportePagoServicio:
             servicio_id=servicio.id,
             tecnico_id=servicio.tecnico_aceptado_id,
             empresa_cliente_id=servicio.empresa_cliente_id,
-            valor=reporte_in.valor,
+            valor=(
+                reporte_in.valor
+                if reporte_in.valor is not None
+                else getattr(servicio, "valor_servicio", None)
+            ),
             estado="GENERADO",
         )
         await self.reportes.crear(reporte)

@@ -27,6 +27,7 @@ def crear_servicio_fake(estado: str = "FINALIZADO") -> SimpleNamespace:
         id=SERVICIO_ID,
         tecnico_aceptado_id=TECNICO_ID,
         empresa_cliente_id=EMPRESA_ID,
+        valor_servicio=Decimal("98000.00"),
         estado=estado,
         fecha_pago_generado=None,
     )
@@ -98,6 +99,49 @@ async def test_crear_reporte_pago_actualiza_estado_servicio(
     assert servicio.estado == "PAGO_GENERADO"
     assert servicio.fecha_pago_generado is not None
     assert SessionFake.commits == 1
+
+
+@pytest.mark.asyncio
+async def test_crear_reporte_pago_usa_valor_servicio_por_defecto(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake()
+
+    class SessionFake:
+        async def commit(self) -> None:
+            pass
+
+        async def refresh(self, obj: object) -> None:
+            obj.id = REPORTE_ID
+            obj.fecha_generacion = FECHA
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    class ReporteRepositorioFake:
+        reporte_creado = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_servicio_id(self, servicio_id: UUID) -> None:
+            return None
+
+        async def crear(self, reporte: object) -> object:
+            self.__class__.reporte_creado = reporte
+            return reporte
+
+    monkeypatch.setattr(reporte_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(reporte_modulo, "ReportePagoRepositorio", ReporteRepositorioFake)
+
+    reporte = await ReportePagoServicio(SessionFake()).crear(SERVICIO_ID, ReportePagoCrear())
+
+    assert reporte is not None
+    assert reporte.valor == Decimal("98000.00")
 
 
 @pytest.mark.asyncio

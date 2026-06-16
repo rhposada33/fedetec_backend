@@ -9,6 +9,7 @@ from app.schemas.empresa_cliente import EmpresaClienteLeer
 from app.schemas.evidencia_servicio import EvidenciaServicioLeer
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import MetricasRendimientoTecnicoLeer, TecnicoActualizar, TecnicoLeer
+from app.schemas.tipo_servicio import TipoServicioActualizar, TipoServicioCrear, TipoServicioLeer
 from app.servicios.admin import AdminServicio
 
 router = APIRouter()
@@ -111,3 +112,56 @@ async def actualizar_configuracion_admin(
     _admin: AdminDep,
 ) -> ConfiguracionLeer:
     return await AdminServicio(session).actualizar_configuracion(configuracion_in)
+
+
+@router.get("/tipos-servicio", response_model=list[TipoServicioLeer])
+async def listar_tipos_servicio_admin(
+    session: SesionDep,
+    _admin: AdminDep,
+    solo_activos: bool = False,
+) -> list[TipoServicioLeer]:
+    return await AdminServicio(session).listar_tipos_servicio(solo_activos)
+
+
+@router.post(
+    "/tipos-servicio",
+    response_model=TipoServicioLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+async def crear_tipo_servicio_admin(
+    tipo_in: TipoServicioCrear,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> TipoServicioLeer:
+    return await AdminServicio(session).crear_tipo_servicio(tipo_in)
+
+
+@router.patch("/tipos-servicio/{tipo_servicio_id}", response_model=TipoServicioLeer)
+async def actualizar_tipo_servicio_admin(
+    tipo_servicio_id: int,
+    tipo_in: TipoServicioActualizar,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> TipoServicioLeer:
+    tipo = await AdminServicio(session).actualizar_tipo_servicio(tipo_servicio_id, tipo_in)
+    if tipo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tipo de servicio no encontrado",
+        )
+    return tipo
+
+
+@router.delete("/tipos-servicio/{tipo_servicio_id}", response_model=TipoServicioLeer)
+async def desactivar_tipo_servicio_admin(
+    tipo_servicio_id: int,
+    session: SesionDep,
+    _admin: AdminDep,
+) -> TipoServicioLeer:
+    tipo = await AdminServicio(session).desactivar_tipo_servicio(tipo_servicio_id)
+    if tipo is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tipo de servicio no encontrado",
+        )
+    return tipo

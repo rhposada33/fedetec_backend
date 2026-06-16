@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime
+from decimal import Decimal
 from types import SimpleNamespace
 from uuid import UUID
 
@@ -14,6 +15,7 @@ os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:543
 from app.main import app
 from app.repositorios.servicio import ServicioRepositorio
 from app.schemas.admin import ConfiguracionActualizar, ConfiguracionAprobacionEvidenciasLeer
+from app.schemas.tipo_servicio import TipoServicioActualizar, TipoServicioCrear
 from app.servicios import admin as admin_modulo
 from app.servicios.admin import AdminServicio
 
@@ -127,6 +129,63 @@ async def test_actualizar_configuracion_persiste_modo_aprobacion(
     )
     assert respuesta.aprobacion_evidencias.modo == "AUTO"
     assert respuesta.fecha_actualizacion == FECHA_HASTA
+
+
+@pytest.mark.asyncio
+async def test_admin_tipos_servicio_crud_logico(monkeypatch: pytest.MonkeyPatch) -> None:
+    tipo = SimpleNamespace(
+        id=10,
+        nombre="Instalacion",
+        valor=Decimal("150000.00"),
+        esta_activo=True,
+        fecha_creacion=FECHA_HASTA,
+        fecha_actualizacion=FECHA_HASTA,
+    )
+
+    class TipoServicioRepositorioFake:
+        solo_activos = None
+        creado = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def listar(self, solo_activos: bool = False) -> list[SimpleNamespace]:
+            self.__class__.solo_activos = solo_activos
+            return [tipo]
+
+        async def obtener_por_id(self, tipo_servicio_id: int) -> SimpleNamespace:
+            return tipo
+
+        async def crear(self, tipo_servicio: object) -> SimpleNamespace:
+            self.__class__.creado = tipo_servicio
+            tipo_servicio.id = tipo.id
+            tipo_servicio.fecha_creacion = FECHA_HASTA
+            tipo_servicio.fecha_actualizacion = FECHA_HASTA
+            return tipo_servicio
+
+        async def guardar(self, tipo_servicio: object) -> SimpleNamespace:
+            tipo_servicio.fecha_actualizacion = FECHA_HASTA
+            return tipo_servicio
+
+    monkeypatch.setattr(admin_modulo, "TipoServicioRepositorio", TipoServicioRepositorioFake)
+    servicio = AdminServicio(object())
+
+    listado = await servicio.listar_tipos_servicio(solo_activos=True)
+    creado = await servicio.crear_tipo_servicio(
+        TipoServicioCrear(nombre="Instalacion", valor=Decimal("150000.00"))
+    )
+    actualizado = await servicio.actualizar_tipo_servicio(
+        tipo.id, TipoServicioActualizar(nombre="Instalacion premium", valor=Decimal("180000.00"))
+    )
+    desactivado = await servicio.desactivar_tipo_servicio(tipo.id)
+
+    assert TipoServicioRepositorioFake.solo_activos is True
+    assert listado[0].nombre == "Instalacion"
+    assert creado.valor == Decimal("150000.00")
+    assert actualizado is not None
+    assert actualizado.nombre == "Instalacion premium"
+    assert desactivado is not None
+    assert desactivado.esta_activo is False
 
 
 def test_admin_dashboard_sin_admin_es_denegado() -> None:

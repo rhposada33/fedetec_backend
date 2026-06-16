@@ -58,7 +58,7 @@ async def test_api_key_authentica_empresa_activa(monkeypatch: pytest.MonkeyPatch
     assert autenticada is empresa
 
 
-def test_post_servicio_rechaza_tipo_invalido() -> None:
+def test_post_servicio_rechaza_tipo_no_positivo() -> None:
     async def obtener_db_fake() -> object:
         yield object()
 
@@ -73,7 +73,7 @@ def test_post_servicio_rechaza_tipo_invalido() -> None:
         headers={"Authorization": "Bearer token-fake", "Idempotency-Key": "req-1"},
         json={
             "empresa_cliente_id": str(EMPRESA_ID),
-            "tipo_servicio": 99,
+            "tipo_servicio": 0,
             "latitud": 4.711,
             "longitud": -74.0721,
             "fecha_programada": FECHA.isoformat(),
@@ -112,6 +112,20 @@ async def test_crear_servicio_es_idempotente_y_guarda_ubicacion_point(
 
     monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", RepositorioFake)
 
+    class TipoServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tipo_servicio_id: int) -> SimpleNamespace:
+            return SimpleNamespace(
+                id=tipo_servicio_id,
+                nombre="Mantenimiento",
+                valor=100000,
+                esta_activo=True,
+            )
+
+    monkeypatch.setattr(servicio_modulo, "TipoServicioRepositorio", TipoServicioRepositorioFake)
+
     empresa = SimpleNamespace(id=EMPRESA_ID)
     servicio_in = servicio_modulo.ServicioCrear(
         tipo_servicio=1,
@@ -131,6 +145,35 @@ async def test_crear_servicio_es_idempotente_y_guarda_ubicacion_point(
     assert RepositorioFake.ubicacion_guardada == "POINT(-74.0721 4.711)"
     assert creado.latitud == 4.711
     assert creado.longitud == -74.0721
+    assert creado.tipo_servicio_nombre == "Mantenimiento"
+    assert creado.valor_servicio == 100000
+
+
+@pytest.mark.asyncio
+async def test_crear_servicio_rechaza_tipo_inactivo(monkeypatch: pytest.MonkeyPatch) -> None:
+    class TipoServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tipo_servicio_id: int) -> SimpleNamespace:
+            return SimpleNamespace(
+                id=tipo_servicio_id,
+                nombre="Mantenimiento",
+                valor=100000,
+                esta_activo=False,
+            )
+
+    monkeypatch.setattr(servicio_modulo, "TipoServicioRepositorio", TipoServicioRepositorioFake)
+
+    servicio_in = servicio_modulo.ServicioCrear(
+        tipo_servicio=1,
+        latitud=4.711,
+        longitud=-74.0721,
+        fecha_programada=FECHA,
+    )
+
+    with pytest.raises(ValueError, match="Tipo de servicio"):
+        await ServicioServicio(object()).crear(servicio_in, SimpleNamespace(id=EMPRESA_ID), "req-1")
 
 
 def test_post_servicio_requiere_idempotency_key() -> None:
@@ -163,6 +206,8 @@ def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
         id=SERVICIO_ID,
         empresa_cliente_id=EMPRESA_ID,
         tipo_servicio=1,
+        tipo_servicio_nombre="Mantenimiento",
+        valor_servicio=100000,
         placa_vehiculo="ABC123",
         direccion="Calle 1",
         fecha_programada=FECHA,
@@ -413,6 +458,20 @@ async def test_actualizar_servicio_admin_edita_campos_operativos(
             return ServicioConUbicacion(servicio, 4.72, -74.08)
 
     monkeypatch.setattr(servicio_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+
+    class TipoServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id(self, tipo_servicio_id: int) -> SimpleNamespace:
+            return SimpleNamespace(
+                id=tipo_servicio_id,
+                nombre="Diagnostico",
+                valor=120000,
+                esta_activo=True,
+            )
+
+    monkeypatch.setattr(servicio_modulo, "TipoServicioRepositorio", TipoServicioRepositorioFake)
 
     respuesta = await ServicioServicio(SessionFake()).actualizar(
         SERVICIO_ID,

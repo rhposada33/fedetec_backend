@@ -62,9 +62,12 @@ async def crear_servicio(
     empresa_cliente = await _resolver_empresa_para_crear_servicio(
         session, usuario_actual, servicio_in
     )
-    return await ServicioServicio(session).crear(
-        servicio_in, empresa_cliente, idempotency_key.strip()
-    )
+    try:
+        return await ServicioServicio(session).crear(
+            servicio_in, empresa_cliente, idempotency_key.strip()
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
 
 
 @router.get("", response_model=list[ServicioLeer])

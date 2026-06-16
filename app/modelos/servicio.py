@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -10,7 +11,8 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    SmallInteger,
+    Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -30,12 +32,12 @@ if TYPE_CHECKING:
     from app.modelos.reporte_pago import ReportePago
     from app.modelos.reprogramacion_servicio import ReprogramacionServicio
     from app.modelos.tecnico import Tecnico
+    from app.modelos.tipo_servicio import TipoServicio
 
 
 class Servicio(Base):
     __tablename__ = "servicios"
     __table_args__ = (
-        CheckConstraint("tipo_servicio IN (1, 2, 3)", name="ck_servicios_tipo_servicio"),
         CheckConstraint(
             "estado IN ('CREADO', 'DISPONIBLE', 'ACEPTADO', 'EN_PROCESO', 'FINALIZADO', "
             "'VALIDADO', 'PAGO_GENERADO', 'RECHAZADO', 'REPROGRAMACION_SOLICITADA', "
@@ -57,7 +59,11 @@ class Servicio(Base):
     empresa_cliente_id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True), ForeignKey("empresas_cliente.id"), nullable=False
     )
-    tipo_servicio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    tipo_servicio: Mapped[int] = mapped_column(
+        Integer, ForeignKey("tipos_servicio.id"), nullable=False
+    )
+    tipo_servicio_nombre: Mapped[str] = mapped_column(String(120), nullable=False)
+    valor_servicio: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     placa_vehiculo: Mapped[str | None] = mapped_column(String(30))
     ubicacion: Mapped[str] = mapped_column(
         Geography(geometry_type="POINT", srid=4326, spatial_index=False), nullable=False
@@ -82,6 +88,7 @@ class Servicio(Base):
     )
 
     empresa_cliente: Mapped[EmpresaCliente] = relationship(back_populates="servicios")
+    tipo_servicio_ref: Mapped[TipoServicio] = relationship(back_populates="servicios")
     tecnico_aceptado: Mapped[Tecnico | None] = relationship(back_populates="servicios_aceptados")
     notificaciones: Mapped[list[NotificacionServicio]] = relationship(back_populates="servicio")
     rechazos: Mapped[list[RechazoServicio]] = relationship(back_populates="servicio")

@@ -10,6 +10,7 @@ from app.modelos.rol import Rol
 from app.modelos.sede import Sede
 from app.modelos.servicio import Servicio
 from app.modelos.tecnico import Tecnico
+from app.modelos.tipo_servicio import TipoServicio
 from app.modelos.usuario import Usuario
 from app.modelos.usuario_rol import UsuarioRol
 
@@ -26,6 +27,7 @@ __all__ = [
     "Sede",
     "Servicio",
     "Tecnico",
+    "TipoServicio",
     "Usuario",
     "UsuarioRol",
 ]

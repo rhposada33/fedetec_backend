@@ -1,5 +1,6 @@
 from datetime import datetime
-from typing import Any, Literal
+from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -7,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ServicioCrear(BaseModel):
     empresa_cliente_id: UUID | None = None
-    tipo_servicio: Literal[1, 2, 3]
+    tipo_servicio: int = Field(gt=0)
     placa_vehiculo: str | None = Field(default=None, max_length=30)
     latitud: float = Field(ge=-90, le=90)
     longitud: float = Field(ge=-180, le=180)
@@ -17,7 +18,7 @@ class ServicioCrear(BaseModel):
 
 class ServicioActualizar(BaseModel):
     empresa_cliente_id: UUID | None = None
-    tipo_servicio: Literal[1, 2, 3] | None = None
+    tipo_servicio: int | None = Field(default=None, gt=0)
     placa_vehiculo: str | None = Field(default=None, max_length=30)
     latitud: float | None = Field(default=None, ge=-90, le=90)
     longitud: float | None = Field(default=None, ge=-180, le=180)
@@ -29,6 +30,8 @@ class ServicioLeer(BaseModel):
     id: UUID
     empresa_cliente_id: UUID
     tipo_servicio: int
+    tipo_servicio_nombre: str
+    valor_servicio: Decimal
     placa_vehiculo: str | None = None
     latitud: float
     longitud: float
