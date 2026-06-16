@@ -12,6 +12,7 @@ from app.core.database import Base
 
 if TYPE_CHECKING:
     from app.modelos.calificacion_servicio import CalificacionServicio
+    from app.modelos.propina_servicio import PropinaServicio
     from app.modelos.reporte_pago import ReportePago
     from app.modelos.servicio import Servicio
     from app.modelos.usuario import Usuario
@@ -41,4 +42,5 @@ class EmpresaCliente(Base):
     calificaciones: Mapped[list[CalificacionServicio]] = relationship(
         back_populates="empresa_cliente"
     )
+    propinas: Mapped[list[PropinaServicio]] = relationship(back_populates="empresa_cliente")
     usuario: Mapped[Usuario | None] = relationship(back_populates="empresa_cliente")

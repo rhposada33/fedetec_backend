@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from app.modelos.empresa_cliente import EmpresaCliente
     from app.modelos.evidencia_servicio import EvidenciaServicio
     from app.modelos.notificacion_servicio import NotificacionServicio
+    from app.modelos.propina_servicio import PropinaServicio
     from app.modelos.rechazo_servicio import RechazoServicio
     from app.modelos.reporte_pago import ReportePago
     from app.modelos.reprogramacion_servicio import ReprogramacionServicio
@@ -100,3 +101,4 @@ class Servicio(Base):
     calificacion: Mapped[CalificacionServicio | None] = relationship(
         back_populates="servicio", uselist=False
     )
+    propina: Mapped[PropinaServicio | None] = relationship(back_populates="servicio", uselist=False)

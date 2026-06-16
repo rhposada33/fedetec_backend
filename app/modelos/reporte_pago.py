@@ -48,6 +48,8 @@ class ReportePago(Base):
         PG_UUID(as_uuid=True), ForeignKey("empresas_cliente.id"), nullable=False
     )
     valor: Mapped[Decimal | None] = mapped_column(Numeric(12, 2))
+    valor_base: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    valor_propina: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     estado: Mapped[str] = mapped_column(String(30), default="PENDIENTE", nullable=False)
     fecha_generacion: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

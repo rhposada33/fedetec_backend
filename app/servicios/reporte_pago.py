@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.reporte_pago import ReportePago
+from app.repositorios.propina_servicio import PropinaServicioRepositorio
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError, ReportePagoRepositorio
 from app.repositorios.servicio import ServicioRepositorio
 from app.schemas.reporte_pago import ReportePagoCrear
@@ -14,6 +15,7 @@ ESTADOS_SERVICIO_REPORTE_PAGO = {"FINALIZADO", "VALIDADO"}
 class ReportePagoServicio:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+        self.propinas = PropinaServicioRepositorio(session)
         self.reportes = ReportePagoRepositorio(session)
         self.servicios = ServicioRepositorio(session)
 
@@ -30,15 +32,19 @@ class ReportePagoServicio:
         if existente is not None:
             raise ReportePagoDuplicadoError("Ya existe un reporte de pago para este servicio")
 
+        valor_base = reporte_in.valor
+        if valor_base is None:
+            valor_base = getattr(servicio, "valor_servicio", 0)
+        propina = await self.propinas.obtener_por_servicio(servicio_id)
+        valor_propina = propina.valor if propina is not None else 0
+
         reporte = ReportePago(
             servicio_id=servicio.id,
             tecnico_id=servicio.tecnico_aceptado_id,
             empresa_cliente_id=servicio.empresa_cliente_id,
-            valor=(
-                reporte_in.valor
-                if reporte_in.valor is not None
-                else getattr(servicio, "valor_servicio", None)
-            ),
+            valor_base=valor_base,
+            valor_propina=valor_propina,
+            valor=valor_base + valor_propina,
             estado="GENERADO",
         )
         await self.reportes.crear(reporte)

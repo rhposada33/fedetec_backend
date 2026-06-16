@@ -15,6 +15,7 @@ from app.api.deps import (
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.repositorios.calificacion_servicio import CalificacionDuplicadaError
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
+from app.repositorios.propina_servicio import PropinaDuplicadaError
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError
 from app.schemas.calificacion_servicio import CalificacionServicioCrear, CalificacionServicioLeer
 from app.schemas.evidencia_servicio import (
@@ -23,6 +24,7 @@ from app.schemas.evidencia_servicio import (
     EvidenciaUploadUrlLeer,
     EvidenciaUploadUrlSolicitar,
 )
+from app.schemas.propina_servicio import PropinaServicioCrear, PropinaServicioLeer
 from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
@@ -38,6 +40,7 @@ from app.schemas.servicio import (
 )
 from app.servicios.calificacion_servicio import CalificacionServicioServicio
 from app.servicios.evidencia_servicio import EvidenciaServicioServicio
+from app.servicios.propina_servicio import PropinaServicioServicio
 from app.servicios.reporte_pago import ReportePagoServicio
 from app.servicios.servicio import ServicioServicio
 
@@ -210,6 +213,55 @@ async def obtener_calificacion_servicio(
             detail="Calificacion no encontrada",
         )
     return calificacion
+
+
+@router.post(
+    "/{servicio_id}/propina",
+    response_model=PropinaServicioLeer,
+    status_code=status.HTTP_201_CREATED,
+)
+async def crear_propina_servicio(
+    servicio_id: UUID,
+    propina_in: PropinaServicioCrear,
+    session: SesionDep,
+    empresa_cliente: EmpresaClienteActualDep,
+) -> PropinaServicioLeer:
+    try:
+        propina = await PropinaServicioServicio(session).crear(
+            servicio_id, empresa_cliente, propina_in
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+    except PropinaDuplicadaError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc)) from exc
+
+    if propina is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Servicio no encontrado",
+        )
+    return propina
+
+
+@router.get("/{servicio_id}/propina", response_model=PropinaServicioLeer)
+async def obtener_propina_servicio(
+    servicio_id: UUID,
+    session: SesionDep,
+    empresa_cliente: EmpresaClienteActualDep,
+) -> PropinaServicioLeer:
+    try:
+        propina = await PropinaServicioServicio(session).obtener(servicio_id, empresa_cliente)
+    except PermissionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    if propina is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Propina no encontrada",
+        )
+    return propina
 
 
 async def _resolver_empresa_para_crear_servicio(

@@ -15,6 +15,8 @@ class ReportePagoLeer(BaseModel):
     tecnico_id: UUID
     empresa_cliente_id: UUID
     valor: Decimal | None = None
+    valor_base: Decimal = Decimal("0")
+    valor_propina: Decimal = Decimal("0")
     estado: str
     fecha_generacion: datetime
 

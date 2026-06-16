@@ -40,6 +40,8 @@ def crear_reporte_fake(valor: Decimal | None = Decimal("125000.00")) -> SimpleNa
         tecnico_id=TECNICO_ID,
         empresa_cliente_id=EMPRESA_ID,
         valor=valor,
+        valor_base=valor or Decimal("0"),
+        valor_propina=Decimal("0"),
         estado="GENERADO",
         fecha_generacion=FECHA,
     )
@@ -83,8 +85,16 @@ async def test_crear_reporte_pago_actualiza_estado_servicio(
             self.__class__.reporte_creado = reporte
             return reporte
 
+    class PropinaRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_servicio(self, servicio_id: UUID) -> None:
+            return None
+
     monkeypatch.setattr(reporte_modulo, "ServicioRepositorio", ServicioRepositorioFake)
     monkeypatch.setattr(reporte_modulo, "ReportePagoRepositorio", ReporteRepositorioFake)
+    monkeypatch.setattr(reporte_modulo, "PropinaServicioRepositorio", PropinaRepositorioFake)
 
     reporte = await ReportePagoServicio(SessionFake()).crear(
         SERVICIO_ID, ReportePagoCrear(valor=Decimal("125000.00"))
@@ -95,6 +105,8 @@ async def test_crear_reporte_pago_actualiza_estado_servicio(
     assert reporte.tecnico_id == TECNICO_ID
     assert reporte.empresa_cliente_id == EMPRESA_ID
     assert reporte.valor == Decimal("125000.00")
+    assert reporte.valor_base == Decimal("125000.00")
+    assert reporte.valor_propina == 0
     assert reporte.estado == "GENERADO"
     assert servicio.estado == "PAGO_GENERADO"
     assert servicio.fecha_pago_generado is not None
@@ -135,13 +147,73 @@ async def test_crear_reporte_pago_usa_valor_servicio_por_defecto(
             self.__class__.reporte_creado = reporte
             return reporte
 
+    class PropinaRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_servicio(self, servicio_id: UUID) -> None:
+            return None
+
     monkeypatch.setattr(reporte_modulo, "ServicioRepositorio", ServicioRepositorioFake)
     monkeypatch.setattr(reporte_modulo, "ReportePagoRepositorio", ReporteRepositorioFake)
+    monkeypatch.setattr(reporte_modulo, "PropinaServicioRepositorio", PropinaRepositorioFake)
 
     reporte = await ReportePagoServicio(SessionFake()).crear(SERVICIO_ID, ReportePagoCrear())
 
     assert reporte is not None
     assert reporte.valor == Decimal("98000.00")
+    assert reporte.valor_base == Decimal("98000.00")
+    assert reporte.valor_propina == 0
+
+
+@pytest.mark.asyncio
+async def test_crear_reporte_pago_suma_propina_existente(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    servicio = crear_servicio_fake()
+
+    class SessionFake:
+        async def commit(self) -> None:
+            pass
+
+        async def refresh(self, obj: object) -> None:
+            obj.id = REPORTE_ID
+            obj.fecha_generacion = FECHA
+
+    class ServicioRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_id_para_actualizar(self, servicio_id: UUID) -> SimpleNamespace:
+            return servicio
+
+    class ReporteRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_servicio_id(self, servicio_id: UUID) -> None:
+            return None
+
+        async def crear(self, reporte: object) -> object:
+            return reporte
+
+    class PropinaRepositorioFake:
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def obtener_por_servicio(self, servicio_id: UUID) -> SimpleNamespace:
+            return SimpleNamespace(valor=Decimal("12000.00"))
+
+    monkeypatch.setattr(reporte_modulo, "ServicioRepositorio", ServicioRepositorioFake)
+    monkeypatch.setattr(reporte_modulo, "ReportePagoRepositorio", ReporteRepositorioFake)
+    monkeypatch.setattr(reporte_modulo, "PropinaServicioRepositorio", PropinaRepositorioFake)
+
+    reporte = await ReportePagoServicio(SessionFake()).crear(SERVICIO_ID, ReportePagoCrear())
+
+    assert reporte is not None
+    assert reporte.valor_base == Decimal("98000.00")
+    assert reporte.valor_propina == Decimal("12000.00")
+    assert reporte.valor == Decimal("110000.00")
 
 
 @pytest.mark.asyncio
