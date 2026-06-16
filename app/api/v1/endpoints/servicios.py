@@ -17,6 +17,7 @@ from app.repositorios.calificacion_servicio import CalificacionDuplicadaError
 from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.propina_servicio import PropinaDuplicadaError
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError
+from app.repositorios.tipo_servicio import TipoServicioRepositorio
 from app.schemas.calificacion_servicio import CalificacionServicioCrear, CalificacionServicioLeer
 from app.schemas.evidencia_servicio import (
     EvidenciaServicioCrear,
@@ -38,6 +39,7 @@ from app.schemas.servicio import (
     ServicioRechazar,
     ServicioReprogramar,
 )
+from app.schemas.tipo_servicio import TipoServicioLeer
 from app.servicios.calificacion_servicio import CalificacionServicioServicio
 from app.servicios.evidencia_servicio import EvidenciaServicioServicio
 from app.servicios.propina_servicio import PropinaServicioServicio
@@ -83,6 +85,12 @@ async def listar_servicios(
     if usuario_es_empresa_cliente(usuario_actual) and usuario_actual.empresa_cliente is not None:
         return await servicio.listar(usuario_actual.empresa_cliente)
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado")
+
+
+@router.get("/tipos", response_model=list[TipoServicioLeer])
+async def listar_tipos_servicio_activos(session: SesionDep) -> list[TipoServicioLeer]:
+    tipos = await TipoServicioRepositorio(session).listar(solo_activos=True)
+    return [TipoServicioLeer.model_validate(tipo) for tipo in tipos]
 
 
 @router.get("/{servicio_id}", response_model=ServicioLeer)

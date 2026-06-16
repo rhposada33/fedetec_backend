@@ -13,6 +13,7 @@ os.environ["DATABASE_URL"] = "postgresql+asyncpg://fedetec:fedetec@localhost:543
 
 from app.api import deps
 from app.api.deps import get_db, obtener_empresa_cliente_por_api_key
+from app.api.v1.endpoints import servicios as servicios_endpoint
 from app.core.security import generar_api_key_hash
 from app.main import app
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
@@ -199,6 +200,38 @@ def test_post_servicio_requiere_idempotency_key() -> None:
     )
 
     assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_listar_tipos_servicio_activos_publico(monkeypatch: pytest.MonkeyPatch) -> None:
+    class TipoServicioRepositorioFake:
+        solo_activos = None
+
+        def __init__(self, session: object) -> None:
+            self.session = session
+
+        async def listar(self, solo_activos: bool = False) -> list[SimpleNamespace]:
+            self.__class__.solo_activos = solo_activos
+            return [
+                SimpleNamespace(
+                    id=1,
+                    nombre="Mantenimiento",
+                    valor=100000,
+                    esta_activo=True,
+                    fecha_creacion=FECHA,
+                    fecha_actualizacion=FECHA,
+                )
+            ]
+
+    monkeypatch.setattr(
+        servicios_endpoint, "TipoServicioRepositorio", TipoServicioRepositorioFake
+    )
+
+    respuesta = await servicios_endpoint.listar_tipos_servicio_activos(object())
+
+    assert TipoServicioRepositorioFake.solo_activos is True
+    assert len(respuesta) == 1
+    assert respuesta[0].nombre == "Mantenimiento"
 
 
 def crear_servicio_fake(estado: str = "CREADO") -> SimpleNamespace:
