@@ -4,10 +4,13 @@ from uuid import UUID
 from geoalchemy2.elements import WKTElement
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.correo import servicio_correo
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.reprogramacion_servicio import ReprogramacionServicio
 from app.modelos.servicio import Servicio
 from app.modelos.tecnico import Tecnico
+from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.notificacion_servicio import NotificacionServicioRepositorio
 from app.repositorios.rechazo_servicio import RechazoServicioRepositorio
 from app.repositorios.reprogramacion_servicio import ReprogramacionServicioRepositorio
@@ -37,6 +40,7 @@ class ServicioServicio:
         self.notificaciones = NotificacionServicioRepositorio(session)
         self.rechazos = RechazoServicioRepositorio(session)
         self.reprogramaciones = ReprogramacionServicioRepositorio(session)
+        self.empresas = EmpresaClienteRepositorio(session)
 
     async def crear(
         self,
@@ -63,6 +67,7 @@ class ServicioServicio:
             clave_idempotencia=clave_idempotencia,
         )
         creado = await self.servicios.crear_idempotente(servicio, clave_idempotencia)
+        await self._notificar_estado(creado.servicio)
         return self._serializar(creado)
 
     async def listar(self, empresa_cliente: EmpresaCliente) -> list[ServicioLeer]:
@@ -163,6 +168,7 @@ class ServicioServicio:
 
         servicio.estado = "DISPONIBLE"
         await self.servicios.guardar(servicio)
+        await self._notificar_estado(servicio)
         publicado = await self.servicios.obtener_por_id(servicio.id)
         if publicado is None:
             raise RuntimeError("No fue posible recuperar el servicio publicado")
@@ -187,6 +193,7 @@ class ServicioServicio:
             servicio.id, tecnico.id, "ACEPTADA"
         )
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         aceptado = await self.servicios.obtener_por_id(servicio_id)
         if aceptado is None:
@@ -233,6 +240,7 @@ class ServicioServicio:
         await self.reprogramaciones.crear(reprogramacion)
         servicio.estado = "REPROGRAMACION_SOLICITADA"
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         return ReprogramacionServicioLeer.model_validate(reprogramacion, from_attributes=True)
 
@@ -247,6 +255,7 @@ class ServicioServicio:
         servicio.estado = "EN_PROCESO"
         servicio.fecha_inicio = datetime.now(UTC)
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         iniciado = await self.servicios.obtener_por_id(servicio_id)
         if iniciado is None:
@@ -264,6 +273,7 @@ class ServicioServicio:
         servicio.estado = "FINALIZADO"
         servicio.fecha_finalizacion = datetime.now(UTC)
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         finalizado = await self.servicios.obtener_por_id(servicio_id)
         if finalizado is None:
@@ -280,6 +290,7 @@ class ServicioServicio:
         servicio.estado = "VALIDADO"
         servicio.fecha_validacion = datetime.now(UTC)
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         validado = await self.servicios.obtener_por_id(servicio_id)
         if validado is None:
@@ -315,11 +326,25 @@ class ServicioServicio:
             servicio.id, tecnico_con_ubicacion.tecnico.id, "ACEPTADA"
         )
         await self.session.commit()
+        await self._notificar_estado(servicio)
 
         reasignado = await self.servicios.obtener_por_id(servicio_id)
         if reasignado is None:
             raise RuntimeError("No fue posible recuperar el servicio reasignado")
         return self._serializar(reasignado)
+
+    async def _notificar_estado(self, servicio: Servicio) -> None:
+        if not settings.SMTP_HABILITADO:
+            return
+        empresa = await self.empresas.obtener_por_id(servicio.empresa_cliente_id)
+        if empresa is None or not empresa.correo_contacto:
+            return
+        await servicio_correo.enviar_cambio_estado_servicio(
+            empresa.correo_contacto,
+            empresa.nombre,
+            str(servicio.id),
+            servicio.estado,
+        )
 
     @staticmethod
     def _serializar(servicio_con_ubicacion: ServicioConUbicacion) -> ServicioLeer:

@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.correo import servicio_correo
 from app.core.security import generar_password_hash
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.rol import Rol
@@ -62,6 +63,7 @@ class EmpresaClienteServicio:
             raise ValueError("No fue posible crear la empresa cliente") from exc
 
         await self.session.refresh(empresa)
+        await servicio_correo.enviar_bienvenida(usuario.correo, usuario.nombre_completo)
         return empresa
 
     async def actualizar(

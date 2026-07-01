@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.correo import servicio_correo
 from app.core.security import crear_token_acceso, generar_password_hash, verificar_password
 from app.modelos.rol import Rol
 from app.modelos.tecnico import Tecnico
@@ -31,7 +32,9 @@ class AutenticacionServicio:
             nombre_completo=usuario_in.nombre_completo,
             hash_contrasena=generar_password_hash(usuario_in.password),
         )
-        return await self.usuarios.crear(usuario)
+        creado = await self.usuarios.crear(usuario)
+        await servicio_correo.enviar_bienvenida(creado.correo, creado.nombre_completo)
+        return creado
 
     async def registrar_tecnico(self, tecnico_in: TecnicoRegistrar) -> UsuarioAutenticadoLeer:
         existente = await self.usuarios.obtener_por_correo(tecnico_in.correo)
@@ -65,6 +68,7 @@ class AutenticacionServicio:
 
         await self.session.refresh(usuario)
         await self.session.refresh(tecnico)
+        await servicio_correo.enviar_bienvenida(usuario.correo, usuario.nombre_completo)
         return self._serializar_usuario_autenticado(
             usuario, roles=[ROL_TECNICO], tecnico_id=tecnico.id
         )

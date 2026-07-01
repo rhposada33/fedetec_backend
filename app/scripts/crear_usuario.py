@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.correo import servicio_correo
 from app.core.database import AsyncSessionLocal
 from app.core.security import generar_password_hash
 from app.modelos.empresa_cliente import EmpresaCliente
@@ -120,6 +121,7 @@ async def crear_o_actualizar_usuario(
 ) -> Usuario:
     await migrar_correo_demo_legacy(session, seed.correo)
     usuario = await obtener_usuario(session, seed.correo)
+    usuario_nuevo = usuario is None
     password_hash = generar_password_hash(seed.password)
 
     if usuario is None:
@@ -154,6 +156,8 @@ async def crear_o_actualizar_usuario(
 
     await session.commit()
     await session.refresh(usuario)
+    if usuario_nuevo:
+        await servicio_correo.enviar_bienvenida(usuario.correo, usuario.nombre_completo)
     return usuario
 
 

@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGIN_REGEX: str | None = None
     STORAGE_PUBLIC_BASE_URL: str = "http://localhost:8000/storage"
     STORAGE_UPLOAD_BASE_URL: str = "http://localhost:8000/storage"
+    SMTP_HABILITADO: bool = False
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USUARIO: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_REMITENTE: str = ""
+    SMTP_USAR_TLS: bool = True
+    SMTP_USAR_SSL: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

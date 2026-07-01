@@ -3,7 +3,10 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.correo import servicio_correo
 from app.modelos.reporte_pago import ReportePago
+from app.repositorios.empresa_cliente import EmpresaClienteRepositorio
 from app.repositorios.propina_servicio import PropinaServicioRepositorio
 from app.repositorios.reporte_pago import ReportePagoDuplicadoError, ReportePagoRepositorio
 from app.repositorios.servicio import ServicioRepositorio
@@ -18,6 +21,7 @@ class ReportePagoServicio:
         self.propinas = PropinaServicioRepositorio(session)
         self.reportes = ReportePagoRepositorio(session)
         self.servicios = ServicioRepositorio(session)
+        self.empresas = EmpresaClienteRepositorio(session)
 
     async def crear(self, servicio_id: UUID, reporte_in: ReportePagoCrear) -> ReportePago | None:
         servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)
@@ -52,6 +56,18 @@ class ReportePagoServicio:
         servicio.fecha_pago_generado = datetime.now(UTC)
         await self.session.commit()
         await self.session.refresh(reporte)
+        empresa = (
+            await self.empresas.obtener_por_id(servicio.empresa_cliente_id)
+            if settings.SMTP_HABILITADO
+            else None
+        )
+        if empresa is not None and empresa.correo_contacto:
+            await servicio_correo.enviar_cambio_estado_servicio(
+                empresa.correo_contacto,
+                empresa.nombre,
+                str(servicio.id),
+                servicio.estado,
+            )
         return reporte
 
     async def listar(self) -> list[ReportePago]:
