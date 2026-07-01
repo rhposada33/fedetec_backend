@@ -16,6 +16,10 @@ class DisponibilidadTecnicoActualizar(BaseModel):
     esta_disponible: bool
 
 
+class FcmTokenActualizar(BaseModel):
+    token: str = Field(min_length=20, max_length=4096)
+
+
 class TecnicoActualizar(BaseModel):
     nombre_completo: str | None = Field(default=None, min_length=1, max_length=150)
     correo: str | None = Field(default=None, max_length=150)

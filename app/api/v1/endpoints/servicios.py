@@ -30,6 +30,7 @@ from app.schemas.reporte_pago import ReportePagoCrear, ReportePagoLeer
 from app.schemas.servicio import (
     HistorialServicioEventoLeer,
     ReprogramacionServicioLeer,
+    ResumenEntregaNotificaciones,
     ServicioActualizar,
     ServicioCrear,
     ServicioLeer,
@@ -47,6 +48,34 @@ from app.servicios.reporte_pago import ReportePagoServicio
 from app.servicios.servicio import ServicioServicio
 
 router = APIRouter()
+
+
+@router.get(
+    "/{servicio_id}/notificaciones/resumen",
+    response_model=ResumenEntregaNotificaciones,
+)
+async def resumen_notificaciones_servicio(
+    servicio_id: UUID, session: SesionDep, usuario_actual: UsuarioActualDep
+) -> ResumenEntregaNotificaciones:
+    servicio_api = ServicioServicio(session)
+    servicio = await servicio_api.obtener_admin(servicio_id)
+    if servicio is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Servicio no encontrado")
+    if not usuario_es_admin(usuario_actual):
+        empresa = usuario_actual.empresa_cliente
+        if empresa is None or servicio.empresa_cliente_id != empresa.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado"
+            )
+    conteos = await servicio_api.resumen_notificaciones(servicio_id)
+    return ResumenEntregaNotificaciones(
+        servicio_id=servicio_id,
+        total=sum(conteos.values()),
+        recibidas=conteos.get("RECIBIDA_APP", 0),
+        enviadas_proveedor=conteos.get("ENVIADA_PROVEEDOR", 0),
+        pendientes=conteos.get("PENDIENTE", 0),
+        fallidas=conteos.get("FALLIDA", 0),
+    )
 
 
 @router.post("", response_model=ServicioLeer, status_code=status.HTTP_201_CREATED)

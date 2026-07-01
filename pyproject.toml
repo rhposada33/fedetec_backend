@@ -17,6 +17,7 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "python-multipart>=0.0.9",
     "sqlalchemy[asyncio]>=2.0.32",
+    "firebase-admin>=7.4.0",
 ]
 
 [project.optional-dependencies]

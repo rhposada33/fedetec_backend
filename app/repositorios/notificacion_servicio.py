@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import NamedTuple
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import contains_eager
 
 from app.modelos.notificacion_servicio import NotificacionServicio
 from app.modelos.servicio import Servicio
+from app.modelos.tecnico import Tecnico
 
 
 class NotificacionServicioConUbicacion(NamedTuple):
@@ -57,6 +59,56 @@ class NotificacionServicioRepositorio:
         )
         result = await self.session.execute(stmt)
         return result.rowcount or 0
+
+    async def listar_destinos(
+        self, servicio_id: UUID
+    ) -> list[tuple[NotificacionServicio, str | None]]:
+        stmt = (
+            select(NotificacionServicio, Tecnico.fcm_token)
+            .join(Tecnico, Tecnico.id == NotificacionServicio.tecnico_id)
+            .where(NotificacionServicio.servicio_id == servicio_id)
+        )
+        return list((await self.session.execute(stmt)).all())
+
+    async def marcar_entrega(
+        self,
+        notificacion: NotificacionServicio,
+        estado: str,
+        message_id: str | None = None,
+        error: str | None = None,
+    ) -> None:
+        notificacion.estado_entrega = estado
+        notificacion.fcm_message_id = message_id
+        notificacion.error_entrega = error
+        if estado == "ENVIADA_PROVEEDOR":
+            notificacion.fecha_entrega_proveedor = datetime.now(UTC)
+        await self.session.commit()
+
+    async def confirmar(self, notificacion_id: UUID, tecnico_id: UUID, leida: bool) -> bool:
+        ahora = datetime.now(UTC)
+        valores: dict[str, object] = {
+            "estado_entrega": "RECIBIDA_APP",
+            "fecha_recibida_app": ahora,
+        }
+        if leida:
+            valores.update({"estado": "LEIDA", "fecha_lectura": ahora})
+        stmt = (
+            update(NotificacionServicio)
+            .where(NotificacionServicio.id == notificacion_id)
+            .where(NotificacionServicio.tecnico_id == tecnico_id)
+            .values(**valores)
+        )
+        result = await self.session.execute(stmt)
+        await self.session.commit()
+        return bool(result.rowcount)
+
+    async def resumen(self, servicio_id: UUID) -> dict[str, int]:
+        stmt = (
+            select(NotificacionServicio.estado_entrega, func.count(NotificacionServicio.id))
+            .where(NotificacionServicio.servicio_id == servicio_id)
+            .group_by(NotificacionServicio.estado_entrega)
+        )
+        return dict((await self.session.execute(stmt)).all())
 
     async def listar_para_tecnico(
         self, tecnico_id: UUID

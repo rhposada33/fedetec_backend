@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     SMTP_REMITENTE: str = ""
     SMTP_USAR_TLS: bool = True
     SMTP_USAR_SSL: bool = False
+    FIREBASE_HABILITADO: bool = False
+    FIREBASE_PROJECT_ID: str = ""
+    FIREBASE_CREDENTIALS_JSON_BASE64: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

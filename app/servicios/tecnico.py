@@ -67,6 +67,16 @@ class TecnicoServicio:
         await self.tecnicos.guardar(tecnico)
         return await self.obtener_yo(tecnico)
 
+    async def actualizar_fcm_token(self, tecnico: Tecnico, token: str) -> None:
+        tecnico.fcm_token = token
+        tecnico.fecha_fcm_token = datetime.now(UTC)
+        await self.tecnicos.guardar(tecnico)
+
+    async def confirmar_notificacion(
+        self, tecnico: Tecnico, notificacion_id: UUID, *, leida: bool = False
+    ) -> bool:
+        return await self.notificaciones.confirmar(notificacion_id, tecnico.id, leida)
+
     async def actualizar_admin(
         self, tecnico_id: UUID, tecnico_in: TecnicoActualizar
     ) -> TecnicoLeer | None:

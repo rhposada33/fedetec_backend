@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.correo import servicio_correo
+from app.core.firebase import firebase_mensajeria
 from app.modelos.empresa_cliente import EmpresaCliente
 from app.modelos.reprogramacion_servicio import ReprogramacionServicio
 from app.modelos.servicio import Servicio
@@ -165,9 +166,9 @@ class ServicioServicio:
             servicio.id,
             [tecnico.tecnico.id for tecnico in tecnicos_cercanos],
         )
-
         servicio.estado = "DISPONIBLE"
         await self.servicios.guardar(servicio)
+        await self._enviar_notificaciones_push(servicio.id)
         await self._notificar_estado(servicio)
         publicado = await self.servicios.obtener_por_id(servicio.id)
         if publicado is None:
@@ -178,6 +179,31 @@ class ServicioServicio:
             notificaciones_creadas=notificaciones_creadas,
             tecnicos_cercanos=len(tecnicos_cercanos),
         )
+
+    async def _enviar_notificaciones_push(self, servicio_id: UUID) -> None:
+        if not settings.FIREBASE_HABILITADO:
+            return
+        destinos = await self.notificaciones.listar_destinos(servicio_id)
+        for notificacion, token in destinos:
+            if not token:
+                await self.notificaciones.marcar_entrega(
+                    notificacion, "FALLIDA", error="Técnico sin token FCM registrado"
+                )
+                continue
+            try:
+                message_id = await firebase_mensajeria.enviar_servicio(
+                    token, str(notificacion.id), str(servicio_id)
+                )
+                await self.notificaciones.marcar_entrega(
+                    notificacion, "ENVIADA_PROVEEDOR", message_id=message_id
+                )
+            except Exception as exc:
+                await self.notificaciones.marcar_entrega(
+                    notificacion, "FALLIDA", error=str(exc)[:1000]
+                )
+
+    async def resumen_notificaciones(self, servicio_id: UUID) -> dict[str, int]:
+        return await self.notificaciones.resumen(servicio_id)
 
     async def aceptar(self, servicio_id: UUID, tecnico: Tecnico) -> ServicioLeer | None:
         servicio = await self.servicios.obtener_por_id_para_actualizar(servicio_id)

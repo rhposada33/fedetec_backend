@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from geoalchemy2 import Geography
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Text, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -39,6 +39,8 @@ class Tecnico(Base):
     )
     esta_disponible: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fecha_ultima_ubicacion: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    fcm_token: Mapped[str | None] = mapped_column(Text)
+    fecha_fcm_token: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fecha_creacion: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

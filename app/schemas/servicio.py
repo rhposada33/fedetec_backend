@@ -53,6 +53,15 @@ class ServicioPublicadoLeer(ServicioLeer):
     tecnicos_cercanos: int
 
 
+class ResumenEntregaNotificaciones(BaseModel):
+    servicio_id: UUID
+    total: int
+    recibidas: int
+    enviadas_proveedor: int
+    pendientes: int
+    fallidas: int
+
+
 class ServicioRechazar(BaseModel):
     motivo: str | None = None
 

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -41,6 +41,11 @@ class NotificacionServicio(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     fecha_lectura: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    estado_entrega: Mapped[str] = mapped_column(String(30), default="PENDIENTE", nullable=False)
+    fcm_message_id: Mapped[str | None] = mapped_column(Text)
+    error_entrega: Mapped[str | None] = mapped_column(Text)
+    fecha_entrega_proveedor: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    fecha_recibida_app: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     servicio: Mapped[Servicio] = relationship(back_populates="notificaciones")
     tecnico: Mapped[Tecnico] = relationship(back_populates="notificaciones")

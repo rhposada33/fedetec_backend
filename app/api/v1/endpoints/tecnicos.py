@@ -8,6 +8,7 @@ from app.api.deps import SesionDep, TecnicoActualDep, UsuarioActualDep
 from app.schemas.servicio import ServicioLeer
 from app.schemas.tecnico import (
     DisponibilidadTecnicoActualizar,
+    FcmTokenActualizar,
     MetricasRendimientoTecnicoLeer,
     NotificacionServicioTecnicoLeer,
     RankingTecnicoLeer,
@@ -20,6 +21,37 @@ from app.schemas.tecnico import (
 from app.servicios.tecnico import TecnicoServicio
 
 router = APIRouter()
+
+
+@router.put("/yo/fcm-token", status_code=status.HTTP_204_NO_CONTENT)
+async def registrar_fcm_token(
+    token_in: FcmTokenActualizar, session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> None:
+    await TecnicoServicio(session).actualizar_fcm_token(tecnico_actual, token_in.token)
+
+
+@router.post(
+    "/yo/notificaciones/{notificacion_id}/recibida", status_code=status.HTTP_204_NO_CONTENT
+)
+async def confirmar_notificacion_recibida(
+    notificacion_id: UUID, session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> None:
+    if not await TecnicoServicio(session).confirmar_notificacion(tecnico_actual, notificacion_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Notificación no encontrada"
+        )
+
+
+@router.post("/yo/notificaciones/{notificacion_id}/leida", status_code=status.HTTP_204_NO_CONTENT)
+async def confirmar_notificacion_leida(
+    notificacion_id: UUID, session: SesionDep, tecnico_actual: TecnicoActualDep
+) -> None:
+    if not await TecnicoServicio(session).confirmar_notificacion(
+        tecnico_actual, notificacion_id, leida=True
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Notificación no encontrada"
+        )
 
 
 @router.get("/yo", response_model=TecnicoLeer)
