@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modelos.evidencia_servicio import EvidenciaServicio
+from app.modelos.servicio import Servicio
 
 
 class EvidenciaServicioRepositorio:
@@ -24,6 +25,19 @@ class EvidenciaServicioRepositorio:
             .where(EvidenciaServicio.estado_aprobacion == "PENDIENTE")
             .order_by(EvidenciaServicio.fecha_creacion.desc())
         )
+        return list(await self.session.scalars(stmt))
+
+    async def listar_por_empresa(
+        self, empresa_cliente_id: UUID, estado: str | None = None
+    ) -> list[EvidenciaServicio]:
+        stmt = (
+            select(EvidenciaServicio)
+            .join(Servicio, Servicio.id == EvidenciaServicio.servicio_id)
+            .where(Servicio.empresa_cliente_id == empresa_cliente_id)
+            .order_by(EvidenciaServicio.fecha_creacion.desc())
+        )
+        if estado is not None:
+            stmt = stmt.where(EvidenciaServicio.estado_aprobacion == estado)
         return list(await self.session.scalars(stmt))
 
     async def obtener_por_id(self, evidencia_id: UUID) -> EvidenciaServicio | None:

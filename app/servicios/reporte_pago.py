@@ -57,5 +57,8 @@ class ReportePagoServicio:
     async def listar(self) -> list[ReportePago]:
         return await self.reportes.listar()
 
+    async def listar_por_empresa(self, empresa_cliente_id: UUID) -> list[ReportePago]:
+        return await self.reportes.listar_por_empresa(empresa_cliente_id)
+
     async def obtener(self, reporte_id: UUID) -> ReportePago | None:
         return await self.reportes.obtener_por_id(reporte_id)

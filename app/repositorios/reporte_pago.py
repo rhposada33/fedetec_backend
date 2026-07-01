@@ -19,6 +19,14 @@ class ReportePagoRepositorio:
         stmt = select(ReportePago).order_by(ReportePago.fecha_generacion.desc())
         return list(await self.session.scalars(stmt))
 
+    async def listar_por_empresa(self, empresa_cliente_id: UUID) -> list[ReportePago]:
+        stmt = (
+            select(ReportePago)
+            .where(ReportePago.empresa_cliente_id == empresa_cliente_id)
+            .order_by(ReportePago.fecha_generacion.desc())
+        )
+        return list(await self.session.scalars(stmt))
+
     async def obtener_por_id(self, reporte_id: UUID) -> ReportePago | None:
         return await self.session.get(ReportePago, reporte_id)
 

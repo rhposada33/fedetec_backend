@@ -93,28 +93,53 @@ class EvidenciaServicioServicio:
         if servicio is None:
             return None
         if not self._es_admin(usuario_actual):
+            empresa = usuario_actual.empresa_cliente
+            if empresa is not None and servicio.servicio.empresa_cliente_id == empresa.id:
+                return await self.evidencias.listar_por_servicio(servicio_id)
             tecnico = usuario_actual.tecnico
             if tecnico is None or servicio.servicio.tecnico_aceptado_id != tecnico.id:
                 raise PermissionError("No tiene permisos para ver las evidencias")
         return await self.evidencias.listar_por_servicio(servicio_id)
 
-    async def aprobar(self, evidencia_id: UUID, admin: Usuario) -> EvidenciaServicio | None:
+    async def listar_por_empresa(
+        self, empresa_cliente_id: UUID, estado: str | None = None
+    ) -> list[EvidenciaServicio]:
+        return await self.evidencias.listar_por_empresa(empresa_cliente_id, estado)
+
+    async def aprobar(self, evidencia_id: UUID, usuario: Usuario) -> EvidenciaServicio | None:
         evidencia = await self.evidencias.obtener_por_id(evidencia_id)
         if evidencia is None:
             return None
+        await self._autorizar_revision(evidencia, usuario)
         evidencia.estado_aprobacion = "APROBADA"
-        evidencia.aprobado_por_usuario_id = admin.id
+        evidencia.aprobado_por_usuario_id = usuario.id
         evidencia.fecha_aprobacion = datetime.now(UTC)
         return await self.evidencias.guardar(evidencia)
 
-    async def rechazar(self, evidencia_id: UUID, admin: Usuario) -> EvidenciaServicio | None:
+    async def rechazar(self, evidencia_id: UUID, usuario: Usuario) -> EvidenciaServicio | None:
         evidencia = await self.evidencias.obtener_por_id(evidencia_id)
         if evidencia is None:
             return None
+        await self._autorizar_revision(evidencia, usuario)
         evidencia.estado_aprobacion = "RECHAZADA"
-        evidencia.aprobado_por_usuario_id = admin.id
+        evidencia.aprobado_por_usuario_id = usuario.id
         evidencia.fecha_aprobacion = datetime.now(UTC)
         return await self.evidencias.guardar(evidencia)
+
+    async def _autorizar_revision(self, evidencia: EvidenciaServicio, usuario: Usuario) -> None:
+        # Compatibilidad con llamadas internas que ya recibieron un administrador validado.
+        if not hasattr(usuario, "roles") and not hasattr(usuario, "empresa_cliente"):
+            return
+        if self._es_admin(usuario):
+            return
+        empresa = usuario.empresa_cliente
+        servicio = await self.servicios.obtener_por_id(evidencia.servicio_id)
+        if (
+            empresa is None
+            or servicio is None
+            or servicio.servicio.empresa_cliente_id != empresa.id
+        ):
+            raise PermissionError("Solo la empresa propietaria puede revisar esta evidencia")
 
     async def _aprobacion_automatica_activa(self) -> bool:
         configuracion = await self.configuracion.obtener_valor(CONFIG_APROBACION_EVIDENCIAS)

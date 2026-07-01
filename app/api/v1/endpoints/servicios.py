@@ -542,8 +542,20 @@ async def crear_reporte_pago_servicio(
     servicio_id: UUID,
     reporte_in: ReportePagoCrear,
     session: SesionDep,
-    _admin: AdminDep,
+    usuario_actual: UsuarioActualDep,
 ) -> ReportePagoLeer:
+    if not usuario_es_admin(usuario_actual):
+        empresa = usuario_actual.empresa_cliente
+        servicio_actual = await ServicioServicio(session).obtener_admin(servicio_id)
+        if (
+            not usuario_es_empresa_cliente(usuario_actual)
+            or empresa is None
+            or servicio_actual is None
+            or servicio_actual.empresa_cliente_id != empresa.id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Acceso no autorizado"
+            )
     try:
         reporte = await ReportePagoServicio(session).crear(servicio_id, reporte_in)
     except ReportePagoDuplicadoError as exc:
